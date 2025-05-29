@@ -1,4 +1,5 @@
 import { createStore, applyMiddleware } from "redux";
+import { composeWithDevTools } from "redux-devtools-extension";
 import thunk from "redux-thunk";
 
 import cascadeReducers from "./cascade";
@@ -59,6 +60,10 @@ const Reducer = undoable(
   undoableConfig
 );
 
-const store = createStore(Reducer, applyMiddleware(thunk, annoMatrixGC));
+// 开启Redux开发者工具
+const store = createStore(
+  Reducer,
+  composeWithDevTools(applyMiddleware(thunk, annoMatrixGC))
+);
 
 export default store;

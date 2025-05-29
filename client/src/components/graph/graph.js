@@ -21,6 +21,8 @@ import CentroidLabels from "./overlays/centroidLabels";
 import actions from "../../actions";
 import renderThrottle from "../../util/renderThrottle";
 
+import TrajectoryLayer from "./overlays/trajectoryLayer";
+
 import {
   flagBackground,
   flagSelected,
@@ -463,27 +465,6 @@ class Graph extends React.Component {
     };
   };
 
-  // 生成 SVG path 字符串
-  getTrajectoryPath() {
-    this.trajectoryPoints = [
-      [100, 100],
-      [200, 200],
-      [300, 200],
-    ]; // 暂时直接线性轨迹点
-    // TODO: 需要从后台获取
-    // TODO: 需要投影变换
-
-    // TODO: 需要实现对于带箭头的，图结构的分支曲线绘制
-    // 使用 d3.line 生成路径字符串
-    const lineGenerator = d3
-      .line()
-      .x((d) => d[0])
-      .y((d) => d[1])
-      .curve(d3.curveLinear); // 你可以换成 d3.curveCatmullRom 等平滑曲线
-
-    return lineGenerator(this.trajectoryPoints);
-  }
-
   createToolSVG = () => {
     /*
     Called from componentDidUpdate. Create the tool SVG, and return any
@@ -872,6 +853,8 @@ class Graph extends React.Component {
         }}
       >
         {/* 分为多个图层 */}
+        {/* TrajectoryLayer层展示轨迹 */}
+        <TrajectoryLayer width={viewport.width} height={viewport.height} />
         {/* GraphOverlayLayer层包含了标签、注释、辅助线等，会随着其他按钮的选择进行变化*/}
         <GraphOverlayLayer
           width={viewport.width}
@@ -895,22 +878,13 @@ class Graph extends React.Component {
             position: "absolute",
             top: 0,
             left: 0,
-            zIndex: 1,
+            zIndex: 1, //
           }}
           width={viewport.width}
           height={viewport.height}
           pointerEvents={graphInteractionMode === "select" ? "auto" : "none"}
-        >
-          {/* TODO:轨迹绘制层 */}
-          <div>Trajectory</div>
-          <path
-            d={this.getTrajectoryPath()}
-            fill="none"
-            stroke="red"
-            strokeWidth={2}
-            pointerEvents="none"
-          />
-        </svg>
+        />
+
         {/* Canvas，主绘制层，通过Canvas实现高性能的数据点渲染 */}
         <canvas
           width={viewport.width}

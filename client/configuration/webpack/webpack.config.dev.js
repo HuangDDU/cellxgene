@@ -36,6 +36,10 @@ const devConfig = {
           publicPath: "..",
         },
       },
+      {
+        test: /\.(csv)$/,
+        use: ["raw-loader"], // 将CSV作为原始文本导入
+      },
     ],
   },
   plugins: [
