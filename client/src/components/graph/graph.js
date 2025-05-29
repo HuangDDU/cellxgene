@@ -37,6 +37,7 @@ Simple 2D transforms control all point painting.  There are three:
 function createProjectionTF(viewportWidth, viewportHeight) {
   /*
   the projection transform accounts for the screen size & other layout
+  投影变换考虑了屏幕尺寸和其他布局
   */
   const fractionToUse = 0.95; // fraction of min dimension to use
   const topGutterSizePx = 32; // top gutter for tools
@@ -211,6 +212,7 @@ class Graph extends React.Component {
   constructor(props) {
     super(props);
     const viewport = this.getViewportDimensions();
+    console.log("viewport", viewport);
     this.reglCanvas = null;
     this.cachedAsyncProps = null;
     const modelTF = createModelTF();
@@ -317,7 +319,10 @@ class Graph extends React.Component {
     if (e.type !== "wheel") e.preventDefault();
     if (camera.handleEvent(e, projectionTF)) {
       this.renderCanvas();
-      this.setState((state) => ({ ...state, updateOverlay: !state.updateOverlay }));
+      this.setState((state) => ({
+        ...state,
+        updateOverlay: !state.updateOverlay,
+      }));
     }
   };
 
@@ -457,6 +462,27 @@ class Graph extends React.Component {
       width: viewportRef.clientWidth,
     };
   };
+
+  // 生成 SVG path 字符串
+  getTrajectoryPath() {
+    this.trajectoryPoints = [
+      [100, 100],
+      [200, 200],
+      [300, 200],
+    ]; // 暂时直接线性轨迹点
+    // TODO: 需要从后台获取
+    // TODO: 需要投影变换
+
+    // TODO: 需要实现对于带箭头的，图结构的分支曲线绘制
+    // 使用 d3.line 生成路径字符串
+    const lineGenerator = d3
+      .line()
+      .x((d) => d[0])
+      .y((d) => d[1])
+      .curve(d3.curveLinear); // 你可以换成 d3.curveCatmullRom 等平滑曲线
+
+    return lineGenerator(this.trajectoryPoints);
+  }
 
   createToolSVG = () => {
     /*
@@ -845,6 +871,8 @@ class Graph extends React.Component {
           left: 0,
         }}
       >
+        {/* 分为多个图层 */}
+        {/* GraphOverlayLayer层包含了标签、注释、辅助线等，会随着其他按钮的选择进行变化*/}
         <GraphOverlayLayer
           width={viewport.width}
           height={viewport.height}
@@ -855,8 +883,10 @@ class Graph extends React.Component {
             graphInteractionMode === "zoom" ? this.handleCanvasEvent : undefined
           }
         >
+          {/* 聚类中心标签 */}
           <CentroidLabels />
         </GraphOverlayLayer>
+        {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形*/}
         <svg
           id="lasso-layer"
           data-testid="layout-overlay"
@@ -870,7 +900,18 @@ class Graph extends React.Component {
           width={viewport.width}
           height={viewport.height}
           pointerEvents={graphInteractionMode === "select" ? "auto" : "none"}
-        />
+        >
+          {/* TODO:轨迹绘制层 */}
+          <div>Trajectory</div>
+          <path
+            d={this.getTrajectoryPath()}
+            fill="none"
+            stroke="red"
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+        </svg>
+        {/* Canvas，主绘制层，通过Canvas实现高性能的数据点渲染 */}
         <canvas
           width={viewport.width}
           height={viewport.height}
@@ -892,6 +933,7 @@ class Graph extends React.Component {
           onWheel={this.handleCanvasEvent}
         />
 
+        {/* 通过Async组件处理异步数据加载和渲染 */}
         <Async
           watchFn={Graph.watchAsync}
           promiseFn={this.fetchAsyncProps}
@@ -951,32 +993,29 @@ const ErrorLoading = ({ displayName, error, width, height }) => {
   );
 };
 
-const StillLoading = ({ displayName, width, height }) => 
+const StillLoading = ({ displayName, width, height }) => (
   /*
-  Render a busy/loading indicator
-  */
-   (
+Render a busy/loading indicator
+*/
+  <div
+    style={{
+      position: "fixed",
+      fontWeight: 500,
+      top: height / 2,
+      width,
+    }}
+  >
     <div
       style={{
-        position: "fixed",
-        fontWeight: 500,
-        top: height / 2,
-        width,
+        display: "flex",
+        justifyContent: "center",
+        justifyItems: "center",
+        alignItems: "center",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          justifyItems: "center",
-          alignItems: "center",
-        }}
-      >
-        <Button minimal loading intent="primary" />
-        <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
-      </div>
+      <Button minimal loading intent="primary" />
+      <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
     </div>
-  )
-;
-
+  </div>
+);
 export default Graph;
