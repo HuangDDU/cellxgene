@@ -12,7 +12,7 @@ PART ?= patch
 clean: clean-lite clean-server clean-client
 
 # cleaning the client's node_modules is the longest one, so we avoid that if possible
-.PHONY: clean-lite
+.PHONY: clean-lites
 clean-lite:
 	rm -rf $(CLEANFILES)
 

@@ -35,6 +35,7 @@ class CentroidLabels extends PureComponent {
     const [layoutDf, colorDf] = await this.fetchData();
     let labels;
     if (colorDf) {
+      // 计算标签的质心坐标
       labels = calcCentroid(
         schema,
         colorAccessor,
@@ -129,6 +130,7 @@ class CentroidLabels extends PureComponent {
             const labelSVGS = [];
             const deselectOpacity = 0.375;
             const { category, colorAccessor, labels } = asyncProps;
+            console.log("CentroidLabels--Async labels", labels);
 
             labels.forEach((coords, label) => {
               const selected = category.get(label) ?? true;
@@ -158,6 +160,7 @@ class CentroidLabels extends PureComponent {
                 />
               );
             });
+            console.log("CentroidLabels--Async labelSVGS", labelSVGS);
 
             return <>{labelSVGS}</>;
           }}
@@ -167,6 +170,7 @@ class CentroidLabels extends PureComponent {
   }
 }
 
+// 函数式组件
 const Label = ({
   label,
   dilatedValue,

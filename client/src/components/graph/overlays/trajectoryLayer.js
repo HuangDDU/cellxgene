@@ -10,6 +10,7 @@ import styles from "../graph.css";
 // 由于上述public文件目前找不到
 
 // 直接只读取Milestone数据，目前一条路径上只有两个点，实际上应该有多个
+// TODO: 轨迹的坐标变换
 const pathArray = [
   [
     [10.1, 10.86],
@@ -33,30 +34,6 @@ const pathArray = [
   ],
 ];
 
-function getTrajectoryPath() {
-  // 生成 SVG path 字符串
-  const trajectoryPoints = [
-    [100, 100],
-    [200, 200],
-    [300, 200],
-  ]; // 暂时直接线性轨迹点
-  // TODO: 从后台获取轨迹点
-  // TODO: 对于轨迹点投影变换
-
-  // TODO: 实现对于带箭头的，图结构的轨迹曲线绘制
-  // 使用 d3.line 生成路径字符串
-  // SVG路径字符串：https://www.runoob.com/svg/svg-path.html，有点类似于Python的turtle绘图
-  const lineGenerator = d3
-    .line()
-    .x((d) => d[0])
-    .y((d) => d[1])
-    .curve(d3.curveLinear);
-  const trajectoryPath = lineGenerator(trajectoryPoints);
-  console.log(trajectoryPath);
-
-  return trajectoryPath;
-}
-
 function transPath(path) {
   const lineGenerator = d3
     .line()
@@ -64,7 +41,7 @@ function transPath(path) {
     .y((d) => d[1] * 10)
     .curve(d3.curveLinear);
   const trajectoryPath = lineGenerator(path);
-  console.log(trajectoryPath);
+  // console.log(trajectoryPath);
 
   return trajectoryPath;
 }
@@ -78,7 +55,7 @@ export default class TrajectoryLayer extends Component {
   }
 
   render() {
-    const {status} = this.state;
+    const { status } = this.state;
     console.log(status);
 
     const { width, height } = this.props;
@@ -96,24 +73,16 @@ export default class TrajectoryLayer extends Component {
             zIndex: 3, // 确保轨迹层在其他图层之上
           }}
         >
-          {/* 简单的单条多段直线路径尝试 */}
-          <path
-            d={getTrajectoryPath()}
-            fill="none"
-            stroke="red"
-            strokeWidth={2}
-            pointerEvents="none"
-          />
           {/* 真实的多条路径 */}
           {pathArray.map((path) => (
-              <path
-                d={transPath(path)}
-                fill="none"
-                stroke="green"
-                strokeWidth={2}
-                pointerEvents="none"
-              />
-            ))}
+            <path
+              d={transPath(path)}
+              fill="none"
+              stroke="green"
+              strokeWidth={2}
+              pointerEvents="none"
+            />
+          ))}
         </svg>
       </div>
     );

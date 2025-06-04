@@ -1,6 +1,8 @@
 import { glPointFlags, glPointSize } from "../../util/glHelpers";
 
+// 函数式组件,使用regl命令绘制散点
 export default function drawPointsRegl(regl) {
+  // 返回一个可调用的 regl 绘制命令
   return regl({
     vert: `
     precision mediump float;

@@ -22,6 +22,7 @@ import actions from "../../actions";
 import renderThrottle from "../../util/renderThrottle";
 
 import TrajectoryLayer from "./overlays/trajectoryLayer";
+import Trajectory from "./overlays/trajectory";
 
 import {
   flagBackground,
@@ -39,23 +40,30 @@ Simple 2D transforms control all point painting.  There are three:
 function createProjectionTF(viewportWidth, viewportHeight) {
   /*
   the projection transform accounts for the screen size & other layout
-  投影变换考虑了屏幕尺寸和其他布局
+  投影变换考虑了屏幕尺寸和其他布局（布局边距 gutter）
+  参考（齐次坐标下的放射变换）：https://blog.csdn.net/weixin_46773434/article/details/127417579
   */
-  const fractionToUse = 0.95; // fraction of min dimension to use
-  const topGutterSizePx = 32; // top gutter for tools
-  const bottomGutterSizePx = 32; // bottom gutter for tools
+  const fractionToUse = 0.95; // fraction of min dimension to use // 使用视口最小维度的95%作为绘图区域大小比例
+  const topGutterSizePx = 32; // top gutter for tools // 顶部工具栏预留32像素
+  const bottomGutterSizePx = 32; // bottom gutter for tools // 底部工具栏预留32像素
+  // 计算除去上下边距后的可用高度
   const heightMinusGutter =
     viewportHeight - topGutterSizePx - bottomGutterSizePx;
+  // 取宽度和可用高度中的较小值，保证图形不会超出视口
   const minDim = Math.min(viewportWidth, heightMinusGutter);
+  // 计算宽度和高度方向的缩放比例，使图形按比例缩放到视口的95%
   const aspectScale = [
     (fractionToUse * minDim) / viewportWidth,
     (fractionToUse * minDim) / viewportHeight,
   ];
+  // 创建一个单位矩阵（3x3）
   const m = mat3.create();
+  // 先做一个平移变换，调整y轴方向的位置，使绘图区域居中于上下边距之间
   mat3.fromTranslation(m, [
     0,
     (bottomGutterSizePx - topGutterSizePx) / viewportHeight / aspectScale[1],
   ]);
+  // 再做缩放变换，按计算的比例缩放x和y轴
   mat3.scale(m, m, aspectScale);
   return m;
 }
@@ -87,6 +95,7 @@ class Graph extends React.Component {
     Must be created for each canvas
     */
     // setup canvas, webgl draw function and camera
+    // canvas画布初始化, webgl绘图函数和相机初始化
     const camera = _camera(canvas);
     const regl = _regl(canvas);
     const drawPoints = _drawPoints(regl);
@@ -107,6 +116,7 @@ class Graph extends React.Component {
   }
 
   static watchAsync(props, prevProps) {
+    // 浅比较数据, 发生变换时重新请求, 执行promiseFn.
     return !shallowEqual(props.watchProps, prevProps.watchProps);
   }
 
@@ -214,7 +224,7 @@ class Graph extends React.Component {
   constructor(props) {
     super(props);
     const viewport = this.getViewportDimensions();
-    console.log("viewport", viewport);
+    // console.log("viewport", viewport);
     this.reglCanvas = null;
     this.cachedAsyncProps = null;
     const modelTF = createModelTF();
@@ -233,7 +243,7 @@ class Graph extends React.Component {
       // regl state
       regl: null,
       drawPoints: null,
-      pointBuffer: null,
+      pointBuffer: null, // 核心:细胞坐标
       colorBuffer: null,
       flagBuffer: null,
 
@@ -537,7 +547,8 @@ class Graph extends React.Component {
     const { currentDimNames } = layoutChoice;
     const X = layoutDf.col(currentDimNames[0]).asArray();
     const Y = layoutDf.col(currentDimNames[1]).asArray();
-    const positions = this.computePointPositions(X, Y, modelTF);
+    const positions = this.computePointPositions(X, Y, modelTF); // 关键, 计算点的坐标
+    // console.log("Graph.fetchAsyncProps: positions", positions);
 
     const colorTable = this.updateColorTable(colorsProp, colorDf);
     const colors = this.computePointColors(colorTable.rgb);
@@ -575,13 +586,17 @@ class Graph extends React.Component {
       - the layout dataframe
       - the point dilation dataframe
     */
+    //  异步请求需要的数据
+    // console.log("Graph.fetchData: fetching data");
     const { metadataField: pointDilationAccessor } = pointDilation;
 
     const promises = [];
     // layout
+    // 布局
     promises.push(annoMatrix.fetch("emb", layoutChoice.current));
 
     // color
+    // 颜色
     const query = this.createColorByQuery(colors);
     if (query) {
       promises.push(annoMatrix.fetch(...query));
@@ -590,12 +605,14 @@ class Graph extends React.Component {
     }
 
     // point highlighting
+    // 需要强调的点坐标
     if (pointDilationAccessor) {
       promises.push(annoMatrix.fetch("obs", pointDilationAccessor));
     } else {
       promises.push(Promise.resolve(null));
     }
 
+    // 所有数据请求完成后执行
     return Promise.all(promises);
   }
 
@@ -720,6 +737,7 @@ class Graph extends React.Component {
   }
 
   renderCanvas = renderThrottle(() => {
+    // 渲染画布, 多加了一层
     const {
       regl,
       drawPoints,
@@ -761,6 +779,7 @@ class Graph extends React.Component {
       flagBuffer({ data: flags, dimension: 1 });
       needToRenderCanvas = true;
     }
+    // 如果有变化，重新渲染Canvas画布
     if (needToRenderCanvas) this.renderCanvas();
   }
 
@@ -853,23 +872,27 @@ class Graph extends React.Component {
         }}
       >
         {/* 分为多个图层 */}
+        {/* TODO: 当前堆叠的方式导致套索工具的失效 */}
         {/* TrajectoryLayer层展示轨迹 */}
         <TrajectoryLayer width={viewport.width} height={viewport.height} />
         {/* GraphOverlayLayer层包含了标签、注释、辅助线等，会随着其他按钮的选择进行变化*/}
         <GraphOverlayLayer
           width={viewport.width}
           height={viewport.height}
-          cameraTF={cameraTF}
-          modelTF={modelTF}
-          projectionTF={projectionTF}
+          cameraTF={cameraTF} // 摄像机变换矩阵，适配手动放大缩小
+          modelTF={modelTF} // 模型变换矩阵，适配WebGL坐标系
+          projectionTF={projectionTF} // 投影变换矩阵，适配浏览器坐标系
           handleCanvasEvent={
             graphInteractionMode === "zoom" ? this.handleCanvasEvent : undefined
           }
         >
-          {/* 聚类中心标签 */}
+          {/* 聚类中心标签，显示时背景细胞变透明 */}
           <CentroidLabels />
+          {/* 轨迹, 像文本标签一样, 点击时显示 */}
+          <Trajectory />
         </GraphOverlayLayer>
-        {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形*/}
+
+        {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}
         <svg
           id="lasso-layer"
           data-testid="layout-overlay"
@@ -885,7 +908,7 @@ class Graph extends React.Component {
           pointerEvents={graphInteractionMode === "select" ? "auto" : "none"}
         />
 
-        {/* Canvas，主绘制层，通过Canvas实现高性能的数据点渲染 */}
+        {/* Canvas，主绘制层，通过Canvas+WebGL实现高性能的数据点渲染, 与后续Async组件共同使用实现数据的加载和渲染 */}
         <canvas
           width={viewport.width}
           height={viewport.height}
@@ -908,9 +931,10 @@ class Graph extends React.Component {
         />
 
         {/* 通过Async组件处理异步数据加载和渲染 */}
+        {/* 参考: https://docs.react-async.com/guide/async-components */}
         <Async
-          watchFn={Graph.watchAsync}
-          promiseFn={this.fetchAsyncProps}
+          promiseFn={this.fetchAsyncProps} // 必填，发送请求的函数
+          watchFn={Graph.watchAsync} // 可选，决定何时重新执行 promiseFn
           watchProps={{
             annoMatrix,
             colors,
@@ -918,8 +942,9 @@ class Graph extends React.Component {
             pointDilation,
             crossfilter,
             viewport,
-          }}
+          }} // 可选，请求的数据
         >
+          {/* 异步操作进行中时渲染 */}
           <Async.Pending initial>
             <StillLoading
               displayName={layoutChoice.current}
@@ -927,6 +952,7 @@ class Graph extends React.Component {
               height={viewport.height}
             />
           </Async.Pending>
+          {/* 异步操作失败时渲染 */}
           <Async.Rejected>
             {(error) => (
               <ErrorLoading
@@ -937,6 +963,7 @@ class Graph extends React.Component {
               />
             )}
           </Async.Rejected>
+          {/* 异步操作成功时渲染(关键核心) */}
           <Async.Fulfilled>
             {(asyncProps) => {
               if (regl && !shallowEqual(asyncProps, this.cachedAsyncProps)) {
@@ -951,7 +978,9 @@ class Graph extends React.Component {
   }
 }
 
+// 后续两个函数式组件对应加载失败与加载时的异步操作
 const ErrorLoading = ({ displayName, error, width, height }) => {
+  // 加载错误
   console.log(error); // log to console as this is an unepected error
   return (
     <div
@@ -970,6 +999,7 @@ const ErrorLoading = ({ displayName, error, width, height }) => {
 const StillLoading = ({ displayName, width, height }) => (
   /*
 Render a busy/loading indicator
+渲染加载的进度条
 */
   <div
     style={{
