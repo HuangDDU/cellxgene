@@ -153,4 +153,5 @@ const hashMedianCentroid = (
   return `${category.__id}+${layoutX.__id}:${layoutY.__id}`;
 };
 // export the memoized calculation function
+// 坐标计算：计算并哈希坐标终点
 export default memoize(calcMedianCentroid, hashMedianCentroid);

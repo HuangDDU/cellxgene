@@ -28,6 +28,7 @@ const promiseThrottle = new PromiseLimit(5);
 
 export default class AnnoMatrixLoader extends AnnoMatrix {
   /*
+  AnnoMatrix实现，使用CXG REST API代理HTTP服务器用作基础（非视图）实例
   AnnoMatrix implementation which proxies to HTTP server using the CXG REST API.
   Used as the base (non-view) instance.
 
@@ -238,6 +239,7 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
     */
     let doRequest;
     let priority = 10; // default fetch priority
+    console.log(`_doLoad: ${field} ${query}`);
 
     switch (field) {
       case "obs":
@@ -297,6 +299,8 @@ function _embLoader(baseURL, _field, query) {
   const urlBase = `${baseURL}layout/obs`;
   const urlQuery = _urlEncodeLabelQuery("layout-name", query);
   const url = `${urlBase}?${urlQuery}`;
+  console.log("loader _embLoader:", url);
+  // /api/v0.2/layout/obs?layout-name=emb
   return () => doBinaryRequest(url);
 }
 

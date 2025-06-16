@@ -95,10 +95,15 @@ const doInitialDataLoad = () =>
         schemaFetch(dispatch),
         userColorsFetchAndLoad(dispatch),
       ]);
+      // 配置设置, anndata版本设置
+      console.log("doInitialDataLoad config", config);
+      //
+      console.log("doInitialDataLoad schema", schema);
 
       genesetsFetch(dispatch, config);
 
       const baseDataUrl = `${globals.API.prefix}${globals.API.version}`;
+      // 关键: 创建 AnnoMatrixLoader(AnnoMatrix抽象类的实现) 实例
       const annoMatrix = new AnnoMatrixLoader(baseDataUrl, schema.schema);
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
       prefetchEmbeddings(annoMatrix);

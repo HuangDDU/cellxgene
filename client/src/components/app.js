@@ -33,6 +33,7 @@ class App extends React.Component {
     window.addEventListener("popstate", this._onURLChanged);
     this._onURLChanged();
 
+    // 启动时加载初始数据, 加载好了annoMatrix(核心)和colors等数据
     dispatch(actions.doInitialDataLoad(window.location.search));
     this.forceUpdate();
   }

@@ -33,9 +33,11 @@ class CentroidLabels extends PureComponent {
     const { colorAccessor } = colors;
 
     const [layoutDf, colorDf] = await this.fetchData();
+    console.log("CentroidLabels.fetchAsyncProps: layoutDf", layoutDf);
+    console.log("CentroidLabels.fetchAsyncProps: colorDf", colorDf);
     let labels;
     if (colorDf) {
-      // 计算标签的质心坐标
+      // 计算标签的质心坐标, 动态调整
       labels = calcCentroid(
         schema,
         colorAccessor,
@@ -43,6 +45,7 @@ class CentroidLabels extends PureComponent {
         layoutChoice,
         layoutDf
       );
+      console.log("CentroidLabels.fetchAsyncProps: labels", labels);
     } else {
       labels = new Map();
     }
@@ -87,8 +90,10 @@ class CentroidLabels extends PureComponent {
     // fetch all data we need: layout, category
     const promises = [];
     // layout
+    // 从annoMatrix提取指定降维字段
     promises.push(annoMatrix.fetch("emb", layoutChoice.current));
     // category to label - we ONLY label on obs, never on X, etc.
+    // 从annoMatrix提取指定聚类标签
     const query = this.colorByQuery();
     if (query && query[0] === "obs") {
       promises.push(annoMatrix.fetch(...query));
@@ -113,7 +118,7 @@ class CentroidLabels extends PureComponent {
     return (
       <Async
         watchFn={CentroidLabels.watchAsync}
-        promiseFn={this.fetchAsyncProps}
+        promiseFn={this.fetchAsyncProps} // 其返回结果用作 Async.Fulfilled 的参数asyncProps
         watchProps={{
           annoMatrix,
           colors,

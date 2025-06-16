@@ -1,0 +1,161 @@
+import React, { PureComponent } from "react";
+import { connect } from "react-redux";
+import Async from "react-async";
+import * as d3 from "d3";
+
+
+
+@connect((state) => ({
+    showTrajectory: state.trajectory.showTrajectory,
+})) // redux的数据定义部分
+class Trajectory extends PureComponent {
+
+    constructor(props) {
+        super(props);
+        // const pathArray = [
+        //     [
+        //         [10.1, 10.86],
+        //         [4.76, 9.01],
+        //     ],
+        //     [
+        //         [4.76, 9.01],
+        //         [0.6, 6.17],
+        //     ],
+        //     [
+        //         [4.76, 9.01],
+        //         [1.24, 7.3],
+        //     ],
+        //     [
+        //         [0.6, 6.17],
+        //         [-3.55, 2.68],
+        //     ],
+        //     [
+        //         [1.24, 7.3],
+        //         [-2.54, 7.73],
+        //     ],
+        // ] // 轨迹关键点
+        const pathArray = [
+            [[0.885396, 0.712374],
+            [0.606292, 0.615681]],
+            [[0.606292, 0.615681],
+            [0.388862, 0.467243]],
+            [[0.606292, 0.615681],
+            [0.422312, 0.526304]],
+            [[0.388862, 0.467243],
+            [0.171954, 0.284832]],
+            [[0.422312, 0.526304],
+            [0.224744, 0.548779]],
+        ] // 轨迹关键点(后台归一化的数据直接粘贴过来)
+
+
+        // 重新计算轨迹关键点位置
+        console.log("Trajectory--constructor pre computePointPositions", pathArray);
+        const pathArrayFlat = pathArray.flat();
+        console.log("pathArrayFlat", pathArrayFlat)
+
+        const X = pathArrayFlat.map(p => p[0]);
+        const Y = pathArrayFlat.map(p => p[1]);
+        const positions = this.props.computePointPositions(X, Y, this.props.modelTF);
+        console.log("positions", positions)
+        // const l = X.length
+        const pathArrayNew = []
+        for (let i = 0; i < pathArray.length; i++) {
+            pathArrayNew.push([
+                [positions[4*i+0 ], positions[4*i+1]],
+                [positions[4*i+2], positions[4*i+3]]
+            ]); // 取出每条路径的两个点
+        }
+        console.log("Trajectory--constructor post computePointPositions", pathArrayNew);
+
+        this.state = {
+            // pathArray: pathArrayNew,
+            pathArray: pathArray,
+        };
+
+    }
+
+    static watchAsync(props, prevProps) {
+        // TODO:
+        console.log("Trajectory--watchAsync props", props, "prevProps", prevProps);
+    }
+
+    fetchAsyncProps = async (props) => {
+        // TODO:
+        console.log("Trajectory--fetchAsyncProps props", props);
+    };
+
+    async fetchData() {
+        // TODO: 从后端获取trajectory数据
+        console.log("Trajectory--fetchData", this);
+    }
+
+
+    transPath = (path) => {
+        const lineGenerator = d3
+            .line()
+            .x((d) => (d[0]))
+            .y((d) => (d[1]))
+            .curve(d3.curveLinear);
+        const trajectoryPath = lineGenerator(path);
+
+        return trajectoryPath;
+    }
+
+    render() {
+        const {
+            inverseTransform,
+            showTrajectory, // redux数据提取在组件中用props
+            // computePointPositions // 轨迹关键点计算
+        } = this.props;
+        const {
+            pathArray // 轨迹关键点
+        } = this.state;
+        const fontSize = "20px";
+        return (
+            <Async
+                watchFn={Trajectory.watchAsync}
+                promiseFn={this.fetchAsyncProps}
+                watchProps={{}}
+            >
+                <Async.Fulfilled>
+                    {(asyncProps) => {
+                        console.log("Trajectory--Async asyncProps", asyncProps);
+                        if (!showTrajectory) return null;
+                        const trajectorySVG = (
+                            <g
+                                key="trajectory"
+                                className="trajectory"
+                                transform="translate(0.5, 0.5)"
+                            >
+                                <text
+                                    transform={inverseTransform}
+                                    textAnchor="middle"
+                                    style={{
+                                        fontSize,
+                                    }}
+                                >
+                                    Trajectory
+                                </text>
+                                {/* 真实的多条路径 */}
+                                {pathArray.map((path) => (
+                                    <path
+                                        // transform={inverseTransform}
+                                        d={this.transPath(path)}
+                                        fill="none"
+                                        stroke="green"
+                                        strokeWidth={0.02}
+                                        pointerEvents="none"
+                                    />
+                                ))}
+                            </g>
+                        );
+                        console.log("Trajectory--Async trajectorySVG", trajectorySVG);
+                        return trajectorySVG;
+                    }}
+                </Async.Fulfilled>
+            </Async>
+        );
+    }
+}
+
+export default Trajectory;

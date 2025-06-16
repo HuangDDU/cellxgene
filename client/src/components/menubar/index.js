@@ -293,7 +293,6 @@ class MenuBar extends React.PureComponent {
             onClick={this.handleTrajectoryChange}
             active={showTrajectory}
             intent={showTrajectory ? "primary" : "none"}
-            // disabled={!isColoredByCategorical}
           />
         </Tooltip>
         <ButtonGroup className={styles.menubarButton}>

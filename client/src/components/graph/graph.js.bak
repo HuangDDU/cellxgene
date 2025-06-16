@@ -21,6 +21,7 @@ import CentroidLabels from "./overlays/centroidLabels";
 import actions from "../../actions";
 import renderThrottle from "../../util/renderThrottle";
 
+// import TrajectoryLayer from "./overlays/trajectoryLayer";
 import Trajectory from "./overlays/trajectory";
 
 import {
@@ -549,10 +550,7 @@ class Graph extends React.Component {
     const Y = layoutDf.col(currentDimNames[1]).asArray();
     console.log("Graph.fetchAsyncProps pre computePointPositions: X, Y", X, Y);
     const positions = this.computePointPositions(X, Y, modelTF); // NOTE:关键, 计算点的坐标
-    console.log(
-      "Graph.fetchAsyncProps post computePointPositions: positions",
-      positions
-    );
+    console.log("Graph.fetchAsyncProps post computePointPositions: positions", positions);
 
     const colorTable = this.updateColorTable(colorsProp, colorDf);
     const colors = this.computePointColors(colorTable.rgb);
@@ -890,7 +888,10 @@ class Graph extends React.Component {
           {/* 聚类中心标签，显示时背景细胞变透明 */}
           <CentroidLabels />
           {/* 轨迹, 像文本标签一样, 点击时显示 */}
-          <Trajectory modelTF={modelTF} />
+          <Trajectory
+            modelTF={modelTF}
+            computePointPositions={this.computePointPositions} // 轨迹关键点计算
+          />
         </GraphOverlayLayer>
 
         {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}

@@ -71,7 +71,7 @@ dominant pattern in cellxgene.
 /**
 Dataframe
 **/
-
+// 类似于Python的DataFrame
 class Dataframe {
   /**
   Constructors & factories

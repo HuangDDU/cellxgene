@@ -18,28 +18,39 @@ const _dataframeCache = dataframeMemo(128);
 
 export default class AnnoMatrix {
   /*
+  1. AnnoMatrix对象的抽象基类, 作为与后端交互提供的注释矩阵数据的代理
   Abstract base class for all AnnoMatrix objects.  This class provides a proxy
   to the annotated matrix data authoritatively served by the server/back-end.
 
+  2. AnnoMatrix实例是不可变的, 其模式和维度不会改变, 可以使用简单的对象相等来检
+  测结构变化实际数据被缓存, 不保证存在, 任何访问数据的请求必须通过fetch()调用解决, 
+  这是异步的, 可能涉及服务器往返.
   AnnoMatrix instances are immutable, meaning that their schema and dimensionality
   will not change, and simple object equality can be used to detect structural
   changes. The actual data is cached, and not guaranteed to be present -- any
   request to access data must be resolved by a fetch() call, which is async, and
   may involve a server round-trip.
 
+  4. 不变性所做的保证，即任何一项都可以通过以下方式检测到简单的annoMatrix比较： 
+    * 模式是相同的，包括所有字段和列 
+    * 维度相同（nObs，nVar） 
+    * 数据映射/转换（如剪裁）是相同的AnnoMatrixes也像过滤器一样“堆叠”, 允许构建以某种方式转换数据的视图
   Guarantees made by the immutabilty, ie, any of these can be detected by
   simple annoMatrix compare:
     * schema is the same, including all fields and columns
     * dimensionality is the same (nObs, nVar)
     * data mapping/transformation, such as clipping, are the same
 
+   4. AnnoMatrix还具有类似“堆栈”的过滤器，允许构建以某种方式转换数据的视图。
   AnnoMatrixes also "stack" like filters, allowing for the construction of
   views which transform the data in some manner.
 
+  5. 通过AnnoMatrixLoader类的实例化，
   The bootstrap class is AnnoMatrixLoader, which is the caching server proxy, and
   is bootstrapped with a API URL:
     new AnnoMatirx(url, schema) -> annoMatrix
 
+  4. 各种视图如AnnoMatrixRowSubsetView, 具有服务器数据的转换视图,使用viewCreators调用。
   There are various "views", such as AnnoMatrixRowSubsetView, which provide
   the same interface but with a transformed view of the server data.  Utilities in
   viewCreators.js can be used to create these views:
@@ -261,6 +272,7 @@ export default class AnnoMatrix {
    ** The actual implementation is in the sub-classes, which MUST override these.
    **/
 
+  //  后续是一堆抽象函数, 如果子类实现这些方法, 调用的时候会报错
   // eslint-disable-next-line class-methods-use-this, no-unused-vars -- make sure subclass implements
   addObsAnnoCategory(col, category) {
     /*
@@ -430,6 +442,7 @@ export default class AnnoMatrix {
   }
 
   async _fetch(field, q) {
+    // 提取指定字段
     if (!AnnoMatrix.fields().includes(field)) return undefined;
     const queries = Array.isArray(q) ? q : [q];
     queries.forEach(_queryValidate);
@@ -646,5 +659,6 @@ function _columnCacheKey(field, column) {
 
 function _subclassResponsibility() {
   /* protect against bugs in subclass */
+  // 直接抛出异常, 说明子类没有实现该抽象类的抽象方法
   throw new Error("subclass failed to implement required method");
 }

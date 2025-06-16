@@ -364,9 +364,28 @@ class DataAdaptor(metaclass=ABCMeta):
         normalized_layout = normalized_layout.astype(dtype=np.float32)
         return normalized_layout
 
+    @staticmethod
+    def normalize_trajectory_embedding(trajectory_embedding, embedding):
+        """Normalize trajectory embedding to meet client assumptions.
+        the normalization paremeters are the same as the embedding layout.
+        """
+        points = trajectory_embedding.reshape(-1, trajectory_embedding.shape[-1]) 
+        min = np.nanmin(embedding, axis=0)
+        max = np.nanmax(embedding, axis=0)
+        scale = np.amax(max - min)
+        normalized_points = (points - min) / scale
+        # translate to center on both axis
+        translate = 0.5 - ((max - min) / scale / 2)
+        normalized_points = normalized_points + translate
+
+        normalized_trajectory_embedding = normalized_points.reshape(trajectory_embedding.shape)
+        normalized_trajectory_embedding = normalized_trajectory_embedding.astype(dtype=np.float32)
+        return normalized_trajectory_embedding
+
     def layout_to_fbs_matrix(self, fields):
         """
         return specified embeddings as a flatbuffer, using the cellxgene matrix fbs encoding.
+        使用cellxgene的matrix fbs编码返回指定降维
 
         * returns only first two dimensions, with name {ename}_0 and {ename}_1,
           where {ename} is the embedding name.
@@ -379,8 +398,10 @@ class DataAdaptor(metaclass=ABCMeta):
         layout_data = []
         with ServerTiming.time("layout.query"):
             for ename in embeddings:
-                embedding = self.get_embedding_array(ename, 2)
-                normalized_layout = DataAdaptor.normalize_embedding(embedding)
+                embedding = self.get_embedding_array(ename, 2)  # 获取降维数据
+                normalized_layout = DataAdaptor.normalize_embedding(embedding)  # 对降维结果进行归一化
+                # normalized_layout = embedding # 不在后端做归一化, 把归一化的工作交给前端
+                # TODO: 此处归一化降维的同时应该归一化轨迹
                 layout_data.append(pd.DataFrame(normalized_layout, columns=[f"{ename}_0", f"{ename}_1"]))
 
         with ServerTiming.time("layout.encode"):
@@ -388,8 +409,68 @@ class DataAdaptor(metaclass=ABCMeta):
                 df = pd.concat(layout_data, axis=1, copy=False)
             else:
                 df = pd.DataFrame()
-            fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)
+            fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)  # fbs压缩编码
 
+        # import pprint
+        # # 临时查看中心坐标计算，看与前端是否一致，发现并不一致，前端可能并不是像此处一样简单的取平均，但是知道前端无论如何缩放计算得到的坐标都是一致的
+        # # lineage = pd.read_csv("/home/huang/PyCode/scRNA/CellFateExplorer/CellFateExplorer/notebook/lineage.csv", header=None)
+        # # df["lineage"] = lineage[0].tolist()
+        # df["lineage"] = self.data.obs["lineage"].tolist()
+        # pprint.pprint(f"lineage group embedding: {df.groupby('lineage').apply(lambda x: x.mean())}")
+
+        # pprint.pprint(f"""
+        #     layout_to_fbs_matrix: {len(embeddings)} embeddings, {df.shape[0]} rows, {df.shape[1]} columns
+        #         df: {df.head(5).to_string(index=False, max_rows=5)}
+        #         fbs: {fbs}
+        #     """)
+        return fbs
+
+    def trajectory_to_fbs_matrix(self, fields):
+        embeddings = self.get_embedding_names() if fields is None or len(fields) == 0 else fields
+        trajectory_data = []
+
+        # TODO: 暂时直接指定静态的UMAP对应的轨迹
+        ename = embeddings[0]
+        embedding = self.get_embedding_array(ename, 2)
+        print(embedding)
+        trajectory_embedding = [
+            [
+                [10.1, 10.86],
+                [4.76, 9.01],
+            ],
+            [
+                [4.76, 9.01],
+                [0.6, 6.17],
+            ],
+            [
+                [4.76, 9.01],
+                [1.24, 7.3],
+            ],
+            [
+                [0.6, 6.17],
+                [-3.55, 2.68],
+            ],
+            [
+                [1.24, 7.3],
+                [-2.54, 7.73],
+            ],
+        ] # (n_segement, 2, 2)
+        trajectory_embedding = np.array(trajectory_embedding)
+        normalized_trajectory = DataAdaptor.normalize_trajectory_embedding(trajectory_embedding, embedding)  # 对轨迹进行归一化
+        s = normalized_trajectory.shape # (n_segement, 2, 2)
+        normalized_trajectory = normalized_trajectory.reshape(s[0], s[1]*s[2]) # (n_segement, 4)
+        trajectory_data.append(pd.DataFrame(normalized_trajectory, 
+                                            columns=[f"{ename}_from_0", f"{ename}_from_1", f"{ename}_to_0", f"{ename}_to_1"]))
+        print(trajectory_data)
+
+        with ServerTiming.time("layout.encode"):
+            if trajectory_data:
+                df = pd.concat(trajectory_data, axis=1, copy=False)
+            else:
+                df = pd.DataFrame()
+            print(df)
+            fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)
+        print(fbs)
         return fbs
 
     def get_last_mod_time(self):
