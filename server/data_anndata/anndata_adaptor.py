@@ -135,6 +135,7 @@ class AnndataAdaptor(DataAdaptor):
                 "var": {"index": self.parameters.get("var_names"), "columns": []},
             },
             "layout": {"obs": []},
+            "trajectory": [] # 补充trajectory字段的注册
         }
         for ax in Axis:
             curr_axis = getattr(self.data, str(ax))
@@ -146,6 +147,9 @@ class AnndataAdaptor(DataAdaptor):
         for layout in self.get_embedding_names():
             layout_schema = {"name": layout, "type": "float32", "dims": [f"{layout}_0", f"{layout}_1"]}
             self.schema["layout"]["obs"].append(layout_schema)
+            # 补充trajectory字段的注册
+            trajectory_schema = [f"from_{layout}_0", f"from_{layout}_1",f"to_{layout}_0", f"to_{layout}_1"]
+            self.schema["trajectory"]+=trajectory_schema
 
     def get_schema(self):
         return self.schema
@@ -200,6 +204,10 @@ class AnndataAdaptor(DataAdaptor):
         self.cell_count = self.data.shape[0]
         self.gene_count = self.data.shape[1]
         self._create_schema()
+        
+        print("_create_schema result")
+        import pprint
+        pprint.pprint(self.schema)
 
         if self.dataset_config.X_approximate_distribution == "auto":
             """Lazy evaluate the heuristic if we are backed."""

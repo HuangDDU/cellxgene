@@ -33,8 +33,8 @@ class CentroidLabels extends PureComponent {
     const { colorAccessor } = colors;
 
     const [layoutDf, colorDf] = await this.fetchData();
-    console.log("CentroidLabels.fetchAsyncProps: layoutDf", layoutDf);
-    console.log("CentroidLabels.fetchAsyncProps: colorDf", colorDf);
+    // console.log("CentroidLabels.fetchAsyncProps: layoutDf", layoutDf);
+    // console.log("CentroidLabels.fetchAsyncProps: colorDf", colorDf);
     let labels;
     if (colorDf) {
       // 计算标签的质心坐标, 动态调整
@@ -45,7 +45,7 @@ class CentroidLabels extends PureComponent {
         layoutChoice,
         layoutDf
       );
-      console.log("CentroidLabels.fetchAsyncProps: labels", labels);
+      // console.log("CentroidLabels.fetchAsyncProps: labels", labels);
     } else {
       labels = new Map();
     }
@@ -135,7 +135,7 @@ class CentroidLabels extends PureComponent {
             const labelSVGS = [];
             const deselectOpacity = 0.375;
             const { category, colorAccessor, labels } = asyncProps;
-            console.log("CentroidLabels--Async labels", labels);
+            // console.log("CentroidLabels--Async labels", labels);
 
             labels.forEach((coords, label) => {
               const selected = category.get(label) ?? true;
@@ -165,7 +165,7 @@ class CentroidLabels extends PureComponent {
                 />
               );
             });
-            console.log("CentroidLabels--Async labelSVGS", labelSVGS);
+            // console.log("CentroidLabels--Async labelSVGS", labelSVGS);
 
             return <>{labelSVGS}</>;
           }}

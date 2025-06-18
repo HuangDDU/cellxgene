@@ -15,32 +15,10 @@ class Trajectory extends PureComponent {
   }
 
   fetchAsyncProps = async (props) => {
-    // 暂时直接指定归一化坐标
-    // const paths = [
-    //   [
-    //     [0.885396, 0.712374],
-    //     [0.606292, 0.615681],
-    //   ],
-    //   [
-    //     [0.606292, 0.615681],
-    //     [0.388862, 0.467243],
-    //   ],
-    //   [
-    //     [0.606292, 0.615681],
-    //     [0.422312, 0.526304],
-    //   ],
-    //   [
-    //     [0.388862, 0.467243],
-    //     [0.171954, 0.284832],
-    //   ],
-    //   [
-    //     [0.422312, 0.526304],
-    //     [0.224744, 0.548779],
-    //   ],
-    // ];
     // 从后端读取trajectory数据
     const { annoMatrix, layoutChoice } = props.watchProps;
     const [pathsDf] = await this.fetchData(annoMatrix, layoutChoice);
+    console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:");
     console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:", pathsDf);
     const { currentDimNames } = layoutChoice;
     const pathsFrom0 = pathsDf.col(`from_${currentDimNames[0]}`).asArray();
@@ -54,9 +32,9 @@ class Trajectory extends PureComponent {
         [toFrom0[i], toFrom1[i]],
       ]);
     }
-    // 更加简化的写法探索
+    // TODO: 更加简化的写法探索
     // const paths_new = pathsDf.col([`from_${layoutChoice}_0`, `from_${layoutChoice}_1`, `to_${layoutChoice}_0`, `to_${layoutChoice}_1`]).asArray();
-    // console.log("Trajectory--fetchAsyncProps paths_new:", paths_new);
+    console.log("Trajectory--fetchAsyncProps paths:", paths);
     return { paths };
   };
 
@@ -65,6 +43,7 @@ class Trajectory extends PureComponent {
     console.log("Trajectory--fetchData", this);
     const promises = [];
     // only milestone network temporarily
+    console.log("layoutChoice.current:", layoutChoice.current);
     promises.push(annoMatrix.fetch("trajectory", layoutChoice.current));
     return Promise.all(promises);
   }
@@ -87,20 +66,18 @@ class Trajectory extends PureComponent {
         <Async.Fulfilled>
           {(asyncProps) => {
             // console.log("Trajectory--Async asyncProps", asyncProps);
-            if (!showTrajectory) return null;
-
+            if (!showTrajectory) return null; // 这里与centroidLabels略有不同
             const trajectoryPathSVGS = [];
             const { paths } = asyncProps;
-
-            paths.forEach((path) => {
+            const keyList = Array.from(
+              { length: paths.length },
+              (_, i) => `path${i + 1}`
+            ); // commit eslint检查需要
+            paths.forEach((path, index) => {
               trajectoryPathSVGS.push(
-                <TrajectoryPath
-                  path={path}
-                  key={1} // commit eslint检查需要
-                />
+                <TrajectoryPath path={path} key={keyList[index]} />
               );
             });
-
             // console.log(trajectoryPathSVGS);
             return trajectoryPathSVGS;
           }}

@@ -22,7 +22,7 @@ export function _getColumnSchema(schema, field, col) {
     case "trajectory":
       if (typeof col === "object")
         throw new Error("unable to get column schema by query");
-      return schema.layout.obsByName[col];
+      return schema.trajectory;
     default:
       throw new Error(`unknown field name: ${field}`);
   }
@@ -35,14 +35,17 @@ export function _isIndex(schema, field, col) {
 
 export function _getColumnDimensionNames(schema, field, col) {
   /*
-		field/col may be an alias for multiple columns. Currently used to map ND 
-		values to 1D dataframe columns for embeddings/layout. Signified by the presence
-		of the "dims" value in the schema.
-		*/
+    field/col may be an alias for multiple columns. Currently used to map ND 
+    values to 1D dataframe columns for embeddings/layout. Signified by the presence
+    of the "dims" value in the schema.
+    */
   const colSchema = _getColumnSchema(schema, field, col);
   if (!colSchema) {
     return undefined;
   }
+  console.log("colSchema", colSchema);
+  console.log("colSchema.dims", colSchema.dims);
+  console.log("col", col);
   return colSchema.dims || [col];
 }
 

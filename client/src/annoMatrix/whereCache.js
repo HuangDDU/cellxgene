@@ -53,11 +53,20 @@ import { _hashStringValues } from "./query";
 
 export function _whereCacheGet(whereCache, schema, field, query) {
   /*
-	query will either be an where query (object) or a column name (string).
+  query will either be an where query (object) or a column name (string).
 
-	Return array of column labels or undefined.
-	*/
-
+  Return array of column labels or undefined.
+  */
+  //  通过查询对象或者列名来查询
+  if (field === "trajectory") {
+    // 对于trajectory返回降维名
+    return [
+      `from_${query}_0`,
+      `from_${query}_1`,
+      `to_${query}_0`,
+      `to_${query}_1`,
+    ];
+  }
   if (typeof query === "object") {
     if (query.where) {
       const {
@@ -87,8 +96,8 @@ export function _whereCacheGet(whereCache, schema, field, query) {
 
 export function _whereCacheCreate(field, query, columnLabels) {
   /*
-	Create a new whereCache
-	*/
+  Create a new whereCache
+  */
   if (typeof query !== "object") return null;
 
   const { where, summarize } = query;
@@ -143,8 +152,8 @@ function __mergeQueries(dst, src) {
 
 function __whereCacheMerge(dst, src) {
   /*
-	merge src into dst (modifies dst)
-	*/
+  merge src into dst (modifies dst)
+  */
   if (!src || typeof src !== "object") return dst;
 
   if (src.where) {
