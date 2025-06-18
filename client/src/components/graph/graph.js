@@ -544,15 +544,15 @@ class Graph extends React.Component {
     );
 
     const { currentDimNames } = layoutChoice;
-    console.log("Graph.fetchAsyncProps layoutDf", layoutDf);
+    // console.log("Graph.fetchAsyncProps layoutDf", layoutDf);
     const X = layoutDf.col(currentDimNames[0]).asArray();
     const Y = layoutDf.col(currentDimNames[1]).asArray();
-    console.log("Graph.fetchAsyncProps pre computePointPositions: X, Y", X, Y);
+    // console.log("Graph.fetchAsyncProps pre computePointPositions: X, Y", X, Y);
     const positions = this.computePointPositions(X, Y, modelTF); // NOTE:关键, 计算点的坐标
-    console.log(
-      "Graph.fetchAsyncProps post computePointPositions: positions",
-      positions
-    );
+    // console.log(
+    //   "Graph.fetchAsyncProps post computePointPositions: positions",
+    //   positions
+    // );
 
     const colorTable = this.updateColorTable(colorsProp, colorDf);
     const colors = this.computePointColors(colorTable.rgb);
@@ -890,7 +890,8 @@ class Graph extends React.Component {
           {/* 聚类中心标签，显示时背景细胞变透明 */}
           <CentroidLabels />
           {/* 轨迹, 像文本标签一样, 点击时显示 */}
-          <Trajectory modelTF={modelTF} />
+          {/* TODO: 透明添加，图层应该在聚类标签中心的下方 */}
+          <Trajectory />
         </GraphOverlayLayer>
 
         {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}
@@ -934,8 +935,8 @@ class Graph extends React.Component {
         {/* 通过Async组件处理异步数据加载和渲染 */}
         {/* 参考: https://docs.react-async.com/guide/async-components */}
         <Async
-          promiseFn={this.fetchAsyncProps} // 必填，发送请求的函数
-          watchFn={Graph.watchAsync} // 可选，决定何时重新执行 promiseFn
+          promiseFn={this.fetchAsyncProps} // 发送请求的函数
+          watchFn={Graph.watchAsync} // 决定何时重新执行 promiseFn
           watchProps={{
             annoMatrix,
             colors,
@@ -943,7 +944,7 @@ class Graph extends React.Component {
             pointDilation,
             crossfilter,
             viewport,
-          }} // 可选，请求的数据
+          }} // 可选，请求数据时需要的参数
         >
           {/* 异步操作进行中时渲染 */}
           <Async.Pending initial>

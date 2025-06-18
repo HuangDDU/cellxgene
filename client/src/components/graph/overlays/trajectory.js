@@ -1,73 +1,107 @@
 import React, { PureComponent } from "react";
-import { connect } from "react-redux";
+import { connect, shallowEqual } from "react-redux";
 import Async from "react-async";
 import * as d3 from "d3";
 
 @connect((state) => ({
+  annoMatrix: state.annoMatrix,
+  layoutChoice: state.layoutChoice,
   showTrajectory: state.trajectory.showTrajectory,
 })) // redux的数据定义部分
 class Trajectory extends PureComponent {
   static watchAsync(props, prevProps) {
-    // TODO:
-    console.log("Trajectory--watchAsync props", props, "prevProps", prevProps);
+    // 浅比较数据, 发生变换时重新请求, 执行promiseFn.
+    return !shallowEqual(props.watchProps, prevProps.watchProps);
   }
 
   fetchAsyncProps = async (props) => {
-    // TODO: 从后端读取trajectory数据
-    console.log("Trajectory--fetchAsyncProps props", props);
-    const paths = [
-      [
-        [0.885396, 0.712374],
-        [0.606292, 0.615681],
-      ],
-      [
-        [0.606292, 0.615681],
-        [0.388862, 0.467243],
-      ],
-      [
-        [0.606292, 0.615681],
-        [0.422312, 0.526304],
-      ],
-      [
-        [0.388862, 0.467243],
-        [0.171954, 0.284832],
-      ],
-      [
-        [0.422312, 0.526304],
-        [0.224744, 0.548779],
-      ],
-    ];
+    // 暂时直接指定归一化坐标
+    // const paths = [
+    //   [
+    //     [0.885396, 0.712374],
+    //     [0.606292, 0.615681],
+    //   ],
+    //   [
+    //     [0.606292, 0.615681],
+    //     [0.388862, 0.467243],
+    //   ],
+    //   [
+    //     [0.606292, 0.615681],
+    //     [0.422312, 0.526304],
+    //   ],
+    //   [
+    //     [0.388862, 0.467243],
+    //     [0.171954, 0.284832],
+    //   ],
+    //   [
+    //     [0.422312, 0.526304],
+    //     [0.224744, 0.548779],
+    //   ],
+    // ];
+    // 从后端读取trajectory数据
+    const { annoMatrix, layoutChoice } = props.watchProps;
+    const [pathsDf] = await this.fetchData(annoMatrix, layoutChoice);
+    console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:", pathsDf);
+    const { currentDimNames } = layoutChoice;
+    const pathsFrom0 = pathsDf.col(`from_${currentDimNames[0]}`).asArray();
+    const pathsFrom1 = pathsDf.col(`from_${currentDimNames[1]}`).asArray();
+    const toFrom0 = pathsDf.col(`to_${currentDimNames[0]}`).asArray();
+    const toFrom1 = pathsDf.col(`to_${currentDimNames[1]}`).asArray();
+    const paths = [];
+    for (let i = 0; i < pathsFrom0.length; i += 1) {
+      paths.push([
+        [pathsFrom0[i], pathsFrom1[i]],
+        [toFrom0[i], toFrom1[i]],
+      ]);
+    }
+    // 更加简化的写法探索
+    // const paths_new = pathsDf.col([`from_${layoutChoice}_0`, `from_${layoutChoice}_1`, `to_${layoutChoice}_0`, `to_${layoutChoice}_1`]).asArray();
+    // console.log("Trajectory--fetchAsyncProps paths_new:", paths_new);
     return { paths };
   };
 
-  async fetchData() {
-    // TODO: 从后端获取trajectory数据
+  async fetchData(annoMatrix, layoutChoice) {
+    // fetch all trajectory data need
     console.log("Trajectory--fetchData", this);
+    const promises = [];
+    // only milestone network temporarily
+    promises.push(annoMatrix.fetch("trajectory", layoutChoice.current));
+    return Promise.all(promises);
   }
 
   render() {
     const {
+      annoMatrix,
+      layoutChoice,
       showTrajectory, // redux数据提取在组件中用props
     } = this.props;
     return (
       <Async
         watchFn={Trajectory.watchAsync}
         promiseFn={this.fetchAsyncProps}
-        watchProps={{}}
+        watchProps={{
+          annoMatrix,
+          layoutChoice,
+        }}
       >
         <Async.Fulfilled>
           {(asyncProps) => {
-            console.log("Trajectory--Async asyncProps", asyncProps);
+            // console.log("Trajectory--Async asyncProps", asyncProps);
             if (!showTrajectory) return null;
 
             const trajectoryPathSVGS = [];
             const { paths } = asyncProps;
 
             paths.forEach((path) => {
-              trajectoryPathSVGS.push(<TrajectoryPath path={path} />);
+              trajectoryPathSVGS.push(
+                <TrajectoryPath
+                  path={path}
+                  key={1} // commit eslint检查需要
+                />
+              );
             });
 
-            console.log(trajectoryPathSVGS);
+            // console.log(trajectoryPathSVGS);
             return trajectoryPathSVGS;
           }}
         </Async.Fulfilled>
@@ -90,15 +124,16 @@ const transPath = (path) => {
 
 // 函数式组件
 const TrajectoryPath = ({ path }) => (
-    <g>
-      <path
-        d={transPath(path)}
-        fill="none"
-        stroke="green"
-        strokeWidth={0.02}
-        pointerEvents="none"
-      />
-    </g>
-  );
+  // TODO: 不仅仅绘制直线，而且绘制Waypoint和轨迹曲线
+  <g>
+    <path
+      d={transPath(path)}
+      fill="none"
+      stroke="green"
+      strokeWidth={0.02}
+      pointerEvents="none"
+    />
+  </g>
+);
 
 export default Trajectory;

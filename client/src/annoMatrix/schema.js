@@ -3,6 +3,7 @@ Private helper functions related to schema
 */
 export function _getColumnSchema(schema, field, col) {
   /* look up the column definition */
+  // fetch时不同的field返回的字段不同
   switch (field) {
     case "obs":
       if (typeof col === "object")
@@ -18,6 +19,10 @@ export function _getColumnSchema(schema, field, col) {
       return schema.layout.obsByName[col];
     case "X":
       return schema.dataframe;
+    case "trajectory":
+      if (typeof col === "object")
+        throw new Error("unable to get column schema by query");
+      return schema.layout.obsByName[col];
     default:
       throw new Error(`unknown field name: ${field}`);
   }

@@ -325,6 +325,25 @@ class AnndataAdaptor(DataAdaptor):
     def get_embedding_array(self, ename, dims=2):
         full_embedding = self.data.obsm[f"X_{ename}"]
         return full_embedding[:, 0:dims]
+    
+    def get_trajectory_names(self):
+        # TODO: 获取所有轨迹的名称
+        return []
+    
+    def get_trajectory_embedding_array(self, tname, ename):
+        trajectory_embedding = self.data.uns["cfe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+        milestone_positions = trajectory_embedding["milestone_positions"]
+        
+        def extract_coords(group_item):
+            from_row = group_item[group_item["percentage"] == 0].iloc[0]
+            to_row = group_item[group_item["percentage"] == 1].iloc[0]
+            from_coord = from_row[["comp_1", "comp_2"]].astype(float).values
+            to_coord = to_row[["comp_1", "comp_2"]].astype(float).values
+            return [from_coord, to_coord]
+
+        trajectory_embedding_array = milestone_positions.groupby("group").apply(extract_coords).values.tolist()
+        trajectory_embedding_array = np.array(trajectory_embedding_array)
+        return trajectory_embedding_array
 
     def compute_diffexp_ttest(self, maskA, maskB, top_n=None, lfc_cutoff=None):
         if top_n is None:

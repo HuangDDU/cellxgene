@@ -7,14 +7,19 @@ ifeq ($(shell which jq),)
 $(error Please install jq using "apt-get install jq" or "brew install jq")
 endif
 
-# pbmc3K dataset
+# # pbmc3K dataset
 # define env_or_else_default
-# # $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.default.json"))
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.default.json"))
+# endef
+
+# # New Anndata dataset
+# define env_or_else_default
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating.json"))
 # endef
 
 # cfe dataset
 define env_or_else_default
-$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating.json"))
+$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
 endef
 
 # if not a full path, create a full path relative to the project root

@@ -106,7 +106,7 @@ const doInitialDataLoad = () =>
       // 关键: 创建 AnnoMatrixLoader(AnnoMatrix抽象类的实现) 实例
       const annoMatrix = new AnnoMatrixLoader(baseDataUrl, schema.schema);
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
-      prefetchEmbeddings(annoMatrix);
+      prefetchEmbeddings(annoMatrix); // 预加载降维
 
       dispatch({
         type: "annoMatrix: init complete",

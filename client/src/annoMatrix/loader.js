@@ -256,6 +256,11 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
         priority = 0; // high prio load for embeddings
         break;
       }
+      case "trajectory": {
+        // 轨迹查询
+        doRequest = _trajectoryLoader(this.baseURL, field, query);
+        break;
+      }
       default:
         throw new Error("Unknown field name");
     }
@@ -271,6 +276,7 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
     );
 
     result = normalizeResponse(field, query, this.schema, result);
+    // console.log("trajectory result", result);
 
     return [whereCacheUpdate, result];
   }
@@ -293,6 +299,21 @@ function _writableCategoryTypeCheck(colSchema) {
   }
 }
 
+// _xxxLoader向后端请求
+
+function _trajectoryLoader(baseURL, _field, query) {
+  _expectSimpleQuery(query);
+
+  const urlBase = `${baseURL}trajectory`;
+  const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref");
+  const layoutQuery = _urlEncodeLabelQuery("layout-name", query);
+  const urlQuery = `${trajectoryQuery}&${layoutQuery}`;
+  const url = `${urlBase}?${urlQuery}`; // 轨迹名称和降维名称共同组成了查询字符串
+  console.log("loader _trajectoryLoader:", url);
+  // /api/v0.2/trajectory/obs?layout-name=umap
+  return () => doBinaryRequest(url);
+}
+
 function _embLoader(baseURL, _field, query) {
   _expectSimpleQuery(query);
 
@@ -313,6 +334,7 @@ function _obsOrVarLoader(baseURL, field, query) {
   return () => doBinaryRequest(url);
 }
 
+// 此处向后端请求基因表达向量
 function _XLoader(baseURL, field, query) {
   _expectComplexQuery(query);
 

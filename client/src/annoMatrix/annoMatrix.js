@@ -62,7 +62,7 @@ export default class AnnoMatrix {
     /*
     return the fields present in the AnnoMatrix instance.
     */
-    return ["obs", "var", "emb", "X"];
+    return ["obs", "var", "emb", "X", "trajectory"];
   }
 
   constructor(schema, nObs, nVar, rowIndex = null) {
@@ -100,18 +100,21 @@ export default class AnnoMatrix {
 		are loaded, they will conform to the schema & dimensionality constraints.
 
 		Do NOT use directly - instead, use the fetch() and preload() API.
+    这里不直接添加，而是通过fetch和preload API添加到_cache里
 		*/
     this._cache = {
       obs: Dataframe.empty(this.rowIndex),
       var: Dataframe.empty(this.rowIndex),
       emb: Dataframe.empty(this.rowIndex),
       X: Dataframe.empty(this.rowIndex),
+      trajectory: Dataframe.empty(this.rowIndex),
     };
     this._pendingLoad = {
       obs: {},
       var: {},
       emb: {},
       X: {},
+      trajectory: {},
     };
     this._whereCache = {};
     this._gcInfo = new Map();
@@ -186,6 +189,7 @@ export default class AnnoMatrix {
    ** Load / read interfaces
    **/
   fetch(field, q) {
+    // 与annoMatrix的IO接口，请求规则：单个字符串，对象，数组
     /*
 		Return the given query on a single matrix field as a single dataframe.
 		Currently supports ONLY full column query.
@@ -431,6 +435,15 @@ export default class AnnoMatrix {
    ** Private interfaces below.
    **/
   _resolveCachedQueries(field, queries) {
+    if (field === "trajectory") {
+      // 暂时直接手动给定字段名称
+      return [
+        `from_${queries}_0`,
+        `from_${queries}_1`,
+        `to_${queries}_0`,
+        `to_${queries}_1`,
+      ];
+    }
     return queries
       .map((query) =>
         _whereCacheGet(this._whereCache, this.schema, field, query).filter(
@@ -443,15 +456,23 @@ export default class AnnoMatrix {
 
   async _fetch(field, q) {
     // 提取指定字段
+    console.log("trajectory field", field);
+    console.log("trajectory q", q);
+
+    // 1. 校验字段是否有效
     if (!AnnoMatrix.fields().includes(field)) return undefined;
+
+    // 2. 确保查询条件是数组
     const queries = Array.isArray(q) ? q : [q];
     queries.forEach(_queryValidate);
 
     /* find cached columns we need, and GC the rest */
+    // 3. 找出缓存中已有的列，并清理无用缓存
     const cachedColumns = this._resolveCachedQueries(field, queries);
     this._gcFetchCleanup(field, cachedColumns);
 
     /* find any query not already cached */
+    // 4. 找出缓存中没有的查询条件
     const uncachedQueries = queries.filter((query) =>
       _whereCacheGet(this._whereCache, this.schema, field, query).some(
         (cacheKey) =>
@@ -460,24 +481,28 @@ export default class AnnoMatrix {
     );
 
     /* load uncached queries */
+    // 5. 对未缓存的查询条件，异步加载数据并更新缓存
     if (uncachedQueries.length > 0) {
       await Promise.all(
         uncachedQueries.map((query) =>
           this._getPendingLoad(field, query, async (_field, _query) => {
             /* fetch, then index.  _doLoad is subclass interface */
-            const [whereCacheUpdate, df] = await this._doLoad(_field, _query);
-            this._cache[_field] = this._cache[_field].withColsFrom(df);
+            const [whereCacheUpdate, df] = await this._doLoad(_field, _query); // 调用子类接口加载数据
+            this._cache[_field] = this._cache[_field].withColsFrom(df); // 用新加载的 df 更新缓存
             this._whereCache = _whereCacheMerge(
               this._whereCache,
               whereCacheUpdate
-            );
+            ); // 更新 whereCache 索引
           })
         )
       );
     }
 
     /* everything we need is in the cache, so just cherry-pick requested columns */
+    // 6. 对于缓存中已有DataFrame数据，挑选请求的列返回
+    console.log("trajectory queries", queries);
     const requestedCacheKeys = this._resolveCachedQueries(field, queries);
+    console.log("trajectory requestedCacheKeys", requestedCacheKeys);
     const response = _dataframeCache(
       this._cache[field].subset(null, requestedCacheKeys)
     );
