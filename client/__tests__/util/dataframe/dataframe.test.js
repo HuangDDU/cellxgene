@@ -1,7 +1,9 @@
 import * as Dataframe from "../../../src/util/dataframe";
 
+// 这里学习dataframe的使用
 describe("dataframe constructor", () => {
   test("empty dataframe", () => {
+    // 空DataFrame
     const df = new Dataframe.Dataframe([0, 0], []);
     expect(df).toBeDefined();
     expect(df.dims).toEqual([0, 0]);
@@ -10,6 +12,7 @@ describe("dataframe constructor", () => {
   });
 
   test("create with default indices", () => {
+    // 默认行索引
     const df = new Dataframe.Dataframe(
       [3, 2],
       [new Int32Array(3).fill(0), new Int32Array(3).fill(1)]
@@ -26,6 +29,7 @@ describe("dataframe constructor", () => {
   });
 
   test("create with labelled indices", () => {
+    // 指定行列索引名
     const df = new Dataframe.Dataframe(
       [3, 2],
       [new Int32Array([0, 1, 2]), new Int32Array([3, 4, 5])],
@@ -49,17 +53,19 @@ describe("dataframe constructor", () => {
 });
 
 describe("simple data access", () => {
+  // 单行数据的获取
   const df = new Dataframe.Dataframe(
-    [4, 2],
+    [4, 2], // [nRows, nCols]
     [
       new Float64Array([0.0, Number.NaN, Number.POSITIVE_INFINITY, 3.14159]),
       ["red", "blue", "green", "nan"],
-    ],
-    new Dataframe.DenseInt32Index([3, 2, 1, 0]),
-    new Dataframe.KeyIndex(["numbers", "colors"])
+    ], // data [nCols, nRows]
+    new Dataframe.DenseInt32Index([3, 2, 1, 0]), // row index
+    new Dataframe.KeyIndex(["numbers", "colors"]) // col index
   );
 
   test("iat", () => {
+    // iat使用行列序号索引
     expect(df).toBeDefined();
 
     // present
@@ -76,6 +82,7 @@ describe("simple data access", () => {
   });
 
   test("at", () => {
+    // at使用行列名索引
     expect(df).toBeDefined();
 
     // present
@@ -92,6 +99,7 @@ describe("simple data access", () => {
   });
 
   test("ihas", () => {
+    // ihas使用行列序号判断是否存在该行列
     expect(df).toBeDefined();
 
     // present
@@ -109,6 +117,7 @@ describe("simple data access", () => {
   });
 
   test("has", () => {
+    // ihas使用行列名判断是否存在该行列
     expect(df).toBeDefined();
 
     // present
@@ -129,6 +138,7 @@ describe("simple data access", () => {
 });
 
 describe("dataframe subsetting", () => {
+  // 子集提取
   describe("subset", () => {
     const sourceDf = new Dataframe.Dataframe(
       [3, 4],
@@ -143,6 +153,7 @@ describe("dataframe subsetting", () => {
     );
 
     test("all rows, one column", () => {
+      // 所有行，一个列
       const dfA = sourceDf.subset(null, ["colors"]);
       expect(dfA).toBeDefined();
       expect(dfA.dims).toEqual([3, 1]);
@@ -158,6 +169,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("all rows, two columns", () => {
+      // 所有行，两个列
       const dfB = sourceDf.subset(null, ["float32", "colors"]);
       expect(dfB).toBeDefined();
       expect(dfB.dims).toEqual([3, 2]);
@@ -182,6 +194,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("one row, all columns", () => {
+      // 1行所有列
       const dfC = sourceDf.subset([1], null);
       expect(dfC).toBeDefined();
       expect(dfC.dims).toEqual([1, 4]);
@@ -194,6 +207,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("two rows, all columns", () => {
+      // 两行所有列
       const dfD = sourceDf.subset([0, 2], null);
       expect(dfD).toBeDefined();
       expect(dfD.dims).toEqual([2, 4]);
@@ -215,6 +229,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("all rows, all columns", () => {
+      // 所有行所有列
       const dfE = sourceDf.subset(null, null);
       expect(dfE).toBeDefined();
       expect(dfE.dims).toEqual([3, 4]);
@@ -227,6 +242,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("two rows, two colums", () => {
+      // 两行,两列
       const dfF = sourceDf.subset([0, 2], ["int32", "float32"]);
       expect(dfF).toBeDefined();
       expect(dfF.dims).toEqual([2, 2]);
@@ -246,6 +262,7 @@ describe("dataframe subsetting", () => {
     });
 
     test("withRowIndex", () => {
+      // 使用行索引名
       const df = sourceDf.subset(
         null,
         ["int32", "float32"],
@@ -294,6 +311,7 @@ describe("dataframe subsetting", () => {
   });
 
   describe("isubset", () => {
+    // 判断是否是子集
     const sourceDf = new Dataframe.Dataframe(
       [3, 4],
       [
@@ -336,6 +354,7 @@ describe("dataframe subsetting", () => {
 });
 
 describe("dataframe factories", () => {
+  // 因子化
   test("create", () => {
     const df = Dataframe.Dataframe.create(
       [3, 3],
@@ -600,6 +619,7 @@ describe("dataframe factories", () => {
     });
 
     test("column picking", () => {
+      // 列选择
       const dfEmpty = Dataframe.Dataframe.empty();
       const dfA = new Dataframe.Dataframe(
         [2, 1],
@@ -643,6 +663,7 @@ describe("dataframe factories", () => {
     });
 
     test("column aliasing", () => {
+      // 列重命名
       const dfA = new Dataframe.Dataframe(
         [2, 1],
         [["red", "blue"]],

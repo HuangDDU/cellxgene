@@ -18,13 +18,12 @@ class Trajectory extends PureComponent {
     // 从后端读取trajectory数据
     const { annoMatrix, layoutChoice } = props.watchProps;
     const [pathsDf] = await this.fetchData(annoMatrix, layoutChoice);
-    console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:");
     console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:", pathsDf);
-    const { currentDimNames } = layoutChoice;
-    const pathsFrom0 = pathsDf.col(`from_${currentDimNames[0]}`).asArray();
-    const pathsFrom1 = pathsDf.col(`from_${currentDimNames[1]}`).asArray();
-    const toFrom0 = pathsDf.col(`to_${currentDimNames[0]}`).asArray();
-    const toFrom1 = pathsDf.col(`to_${currentDimNames[1]}`).asArray();
+    const [cd0, cd1] = layoutChoice.currentDimNames;
+    const pathsFrom0 = pathsDf.col(`from_${cd0}`).asArray();
+    const pathsFrom1 = pathsDf.col(`from_${cd1}`).asArray();
+    const toFrom0 = pathsDf.col(`to_${cd0}`).asArray();
+    const toFrom1 = pathsDf.col(`to_${cd1}`).asArray();
     const paths = [];
     for (let i = 0; i < pathsFrom0.length; i += 1) {
       paths.push([
@@ -33,7 +32,7 @@ class Trajectory extends PureComponent {
       ]);
     }
     // TODO: 更加简化的写法探索
-    // const paths_new = pathsDf.col([`from_${layoutChoice}_0`, `from_${layoutChoice}_1`, `to_${layoutChoice}_0`, `to_${layoutChoice}_1`]).asArray();
+    // const paths = pathsDf.col([`from_${layoutChoice}_0`, `from_${layoutChoice}_1`, `to_${layoutChoice}_0`, `to_${layoutChoice}_1`]).asArray();
     console.log("Trajectory--fetchAsyncProps paths:", paths);
     return { paths };
   };

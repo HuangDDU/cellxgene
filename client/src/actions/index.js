@@ -90,6 +90,7 @@ const doInitialDataLoad = () =>
     dispatch({ type: "initial data load start" });
 
     try {
+      // 直接请求config, schema
       const [config, schema] = await Promise.all([
         configFetch(dispatch),
         schemaFetch(dispatch),
@@ -97,7 +98,6 @@ const doInitialDataLoad = () =>
       ]);
       // 配置设置, anndata版本设置
       console.log("doInitialDataLoad config", config);
-      //
       console.log("doInitialDataLoad schema", schema);
 
       genesetsFetch(dispatch, config);

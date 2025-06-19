@@ -422,53 +422,7 @@ class DataAdaptor(metaclass=ABCMeta):
         return fbs
 
     def trajectory_to_fbs_matrix(self, fields):
-        # # 暂时直接指定静态的UMAP对应的轨迹
-        # embeddings = self.get_embedding_names() if fields is None or len(fields) == 0 else fields
-        # trajectory_data = []
-        # trajectory_embedding = [
-        #     [
-        #         [10.1, 10.86],
-        #         [4.76, 9.01],
-        #     ],
-        #     [
-        #         [4.76, 9.01],
-        #         [0.6, 6.17],
-        #     ],
-        #     [
-        #         [4.76, 9.01],
-        #         [1.24, 7.3],
-        #     ],
-        #     [
-        #         [0.6, 6.17],
-        #         [-3.55, 2.68],
-        #     ],
-        #     [
-        #         [1.24, 7.3],
-        #         [-2.54, 7.73],
-        #     ],
-        # ] # (n_segement, 2, 2)
-        # trajectory_embedding = np.array(trajectory_embedding)
-        
-        # # normalize trajectory embedding by cell embedding
-        # ename = embeddings[0]
-        # embedding = self.get_embedding_array(ename, 2)
-        # normalized_trajectory = DataAdaptor.normalize_trajectory_embedding(trajectory_embedding, embedding)
-        # s = normalized_trajectory.shape # (n_segement, 2, 2)
-        # normalized_trajectory = normalized_trajectory.reshape(s[0], s[1]*s[2]) # (n_segement, 4)
-        # trajectory_data.append(pd.DataFrame(normalized_trajectory, 
-        #                                     columns=[f"{ename}_from_0", f"{ename}_from_1", f"{ename}_to_0", f"{ename}_to_1"]))
-        # print(trajectory_data)
-
-        # with ServerTiming.time("layout.encode"):
-        #     if trajectory_data:
-        #         df = pd.concat(trajectory_data, axis=1, copy=False)
-        #     else:
-        #         df = pd.DataFrame()
-        #     fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)
-        # print(fbs)
-        # return fbs
-    
-        # TODO: 从FateAnnData提取轨迹
+        # 从FateAnnData提取轨迹
         embeddings = self.get_embedding_names() if fields is None or len(fields) == 0 else fields
         # layout_data = []
         trajectory_data = []
@@ -482,7 +436,7 @@ class DataAdaptor(metaclass=ABCMeta):
                 normalized_trajectory = DataAdaptor.normalize_trajectory_embedding(trajectory_embedding_array, embedding)
                 s = normalized_trajectory.shape # (n_segement, 2, 2)
                 normalized_trajectory = normalized_trajectory.reshape(s[0], s[1]*s[2]) # (n_segement, 4)
-                print(normalized_trajectory)
+                # print(normalized_trajectory)
                 trajectory_data.append(pd.DataFrame(normalized_trajectory, 
                                             columns=[f"from_{ename}_0", f"from_{ename}_1", f"to_{ename}_0", f"to_{ename}_1"]))
 
@@ -491,12 +445,10 @@ class DataAdaptor(metaclass=ABCMeta):
                 df = pd.concat(trajectory_data, axis=1, copy=False)
             else:
                 df = pd.DataFrame()
-            print(df)
+            # print(df)
             fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)
    
         return bytes(fbs) # 这里必须转化为byte
-
-       
 
     def get_last_mod_time(self):
         try:

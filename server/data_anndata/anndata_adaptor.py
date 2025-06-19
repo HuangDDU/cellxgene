@@ -135,7 +135,7 @@ class AnndataAdaptor(DataAdaptor):
                 "var": {"index": self.parameters.get("var_names"), "columns": []},
             },
             "layout": {"obs": []},
-            "trajectory": [] # 补充trajectory字段的注册
+            "trajectory": {"obs": []}, # 补充trajectory字段的注册, 后续添加
         }
         for ax in Axis:
             curr_axis = getattr(self.data, str(ax))
@@ -148,8 +148,12 @@ class AnndataAdaptor(DataAdaptor):
             layout_schema = {"name": layout, "type": "float32", "dims": [f"{layout}_0", f"{layout}_1"]}
             self.schema["layout"]["obs"].append(layout_schema)
             # 补充trajectory字段的注册
-            trajectory_schema = [f"from_{layout}_0", f"from_{layout}_1",f"to_{layout}_0", f"to_{layout}_1"]
-            self.schema["trajectory"]+=trajectory_schema
+            trajectory_schema = {
+                "name": layout,
+                "type": "float32",
+                "dims": [f"from_{layout}_0", f"from_{layout}_1",f"to_{layout}_0", f"to_{layout}_1"],
+            }
+            self.schema["trajectory"]["obs"].append(trajectory_schema)
 
     def get_schema(self):
         return self.schema

@@ -22,7 +22,8 @@ export function _getColumnSchema(schema, field, col) {
     case "trajectory":
       if (typeof col === "object")
         throw new Error("unable to get column schema by query");
-      return schema.trajectory;
+      // # 补充trajectory字段的注册后读取
+      return schema.trajectory.obsByName[col];
     default:
       throw new Error(`unknown field name: ${field}`);
   }
@@ -43,9 +44,6 @@ export function _getColumnDimensionNames(schema, field, col) {
   if (!colSchema) {
     return undefined;
   }
-  console.log("colSchema", colSchema);
-  console.log("colSchema.dims", colSchema.dims);
-  console.log("col", col);
   return colSchema.dims || [col];
 }
 

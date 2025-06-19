@@ -435,16 +435,6 @@ export default class AnnoMatrix {
    ** Private interfaces below.
    **/
   _resolveCachedQueries(field, queries) {
-    // if (field === "trajectory") {
-    //   // 暂时直接手动给定字段名称
-    //   // TODO: 找地方注册这些字段
-    //   return [
-    //     `from_${queries}_0`,
-    //     `from_${queries}_1`,
-    //     `to_${queries}_0`,
-    //     `to_${queries}_1`,
-    //   ];
-    // }
     return queries
       .map((query) =>
         _whereCacheGet(this._whereCache, this.schema, field, query).filter(
@@ -462,14 +452,14 @@ export default class AnnoMatrix {
     // 2. 确保查询条件是数组
     const queries = Array.isArray(q) ? q : [q];
     queries.forEach(_queryValidate);
-    console.log(`trajectory field ${field}, q ${q}`);
-    console.log("trajectory queries", queries);
+    // console.log(`trajectory field ${field}, q ${q}`);
+    // console.log("trajectory queries", queries);
 
     /* find cached columns we need, and GC the rest */
     // 3. 找出缓存中已有的列，并清理无用缓存
     const cachedColumns = this._resolveCachedQueries(field, queries);
     this._gcFetchCleanup(field, cachedColumns);
-    console.log("trajectory cachedColumns", cachedColumns);
+    // console.log("trajectory cachedColumns", cachedColumns);
 
     /* find any query not already cached */
     // 4. 找出缓存中没有的查询条件
@@ -479,7 +469,7 @@ export default class AnnoMatrix {
           cacheKey === undefined || !this._cache[field].hasCol(cacheKey)
       )
     );
-    console.log("trajectory uncachedQueries", uncachedQueries);
+    // console.log("trajectory uncachedQueries", uncachedQueries);
 
     /* load uncached queries */
     // 5. 对未缓存的查询条件，异步加载数据并更新缓存
@@ -489,11 +479,11 @@ export default class AnnoMatrix {
           this._getPendingLoad(field, query, async (_field, _query) => {
             /* fetch, then index.  _doLoad is subclass interface */
             const [whereCacheUpdate, df] = await this._doLoad(_field, _query); // 调用子类接口加载数据
-            console.log("trajectory whereCacheUpdate", whereCacheUpdate);
-            console.log("trajectory df", df);
+            // console.log("trajectory whereCacheUpdate", whereCacheUpdate);
+            // console.log("trajectory df", df);
             // 由于注册字段的错误，此处会多次对trajectory重复添加
             this._cache[_field] = this._cache[_field].withColsFrom(df); // 用新加载的 df 更新缓存
-            console.log("trajectory this._cache[_field]", this._cache[_field]);
+            // console.log("trajectory this._cache[_field]", this._cache[_field]);
             this._whereCache = _whereCacheMerge(
               this._whereCache,
               whereCacheUpdate
@@ -506,12 +496,12 @@ export default class AnnoMatrix {
     /* everything we need is in the cache, so just cherry-pick requested columns */
     // 6. 对于缓存中已有DataFrame数据，挑选请求的列返回
     const requestedCacheKeys = this._resolveCachedQueries(field, queries);
-    console.log("trajectory requestedCacheKeys", requestedCacheKeys);
+    // console.log("trajectory requestedCacheKeys", requestedCacheKeys);
     const response = _dataframeCache(
       this._cache[field].subset(null, requestedCacheKeys)
     );
     this._gcUpdateStats(field, response);
-    console.log("trajectory response", response);
+    // console.log("trajectory response", response);
     return response;
   }
 

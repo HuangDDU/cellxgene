@@ -304,8 +304,8 @@ function _writableCategoryTypeCheck(colSchema) {
 function _trajectoryLoader(baseURL, _field, query) {
   _expectSimpleQuery(query);
 
-  const urlBase = `${baseURL}trajectory`;
-  const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref");
+  const urlBase = `${baseURL}trajectory/obs`;
+  const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref"); // 暂时使用ref轨迹
   const layoutQuery = _urlEncodeLabelQuery("layout-name", query);
   const urlQuery = `${trajectoryQuery}&${layoutQuery}`;
   const url = `${urlBase}?${urlQuery}`; // 轨迹名称和降维名称共同组成了查询字符串

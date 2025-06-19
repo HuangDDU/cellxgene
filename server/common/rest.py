@@ -307,28 +307,8 @@ def layout_obs_get(request, data_adaptor):
             include_exc_info=True,
         )
 
-
 def trajectory_obs_get(request, data_adaptor):
-    # http://localhost:5005/api/v0.2/trajectory/obs?layout-name=umap
-    fields = request.args.getlist("layout-name", None)  # 暂时获得指定降维对应的轨迹
-
-    try:
-        return make_response(
-            # 获取指定轨迹并返回矩阵
-            data_adaptor.trajectory_to_fbs_matrix(fields), HTTPStatus.OK, {"Content-Type": "application/octet-stream"}
-        )
-    except (KeyError, DatasetAccessError) as e:
-        return abort_and_log(HTTPStatus.BAD_REQUEST, str(e), include_exc_info=True)
-    except PrepareError:
-        return abort_and_log(
-            HTTPStatus.NOT_IMPLEMENTED,
-            f"No embedding available {request.path}",
-            loglevel=logging.ERROR,
-            include_exc_info=True,
-        )
-
-def trajectory_get(request, data_adaptor):
-    # http://localhost:5005/api/v0.2/trajectory?trajectory-name=ref&layout-name=umap
+    # http://localhost:5005/api/v0.2/trajectory/obs?trajectory-name=ref&layout-name=umap
     fields = request.args.getlist("layout-name", None)  # 暂时获得指定降维对应的轨迹
 
     try:

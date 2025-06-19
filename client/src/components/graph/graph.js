@@ -887,11 +887,11 @@ class Graph extends React.Component {
             graphInteractionMode === "zoom" ? this.handleCanvasEvent : undefined
           }
         >
-          {/* 聚类中心标签，显示时背景细胞变透明 */}
-          <CentroidLabels />
           {/* 轨迹, 像文本标签一样, 点击时显示 */}
           {/* TODO: 透明添加，图层应该在聚类标签中心的下方 */}
           <Trajectory />
+          {/* 聚类中心标签，显示时背景细胞变透明 */}
+          <CentroidLabels />
         </GraphOverlayLayer>
 
         {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}

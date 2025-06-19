@@ -172,12 +172,6 @@ class TrajectoryObsAPI(Resource):
     @rest_get_data_adaptor
     def get(self, data_adaptor):
         return common_rest.trajectory_obs_get(request, data_adaptor)
-    
-class TrajectoryAPI(Resource):
-    @cache_control(public=True, max_age=ONE_WEEK)
-    @rest_get_data_adaptor
-    def get(self, data_adaptor):
-        return common_rest.trajectory_get(request, data_adaptor)
 
 class GenesetsAPI(Resource):
     @cache_control(public=True, max_age=ONE_WEEK)
@@ -234,8 +228,7 @@ def get_api_dataroot_resources(bp_dataroot):
     # Computation routes
     add_resource(DiffExpObsAPI, "/diffexp/obs")
     add_resource(LayoutObsAPI, "/layout/obs") # 降维布局相关
-    add_resource(TrajectoryObsAPI, "/trajectory/obs") # 轨迹推断相关deprecated
-    add_resource(TrajectoryAPI, "/trajectory") # 轨迹推断相关
+    add_resource(TrajectoryObsAPI, "/trajectory/obs") # 轨迹推断相关
     return api
 
 
