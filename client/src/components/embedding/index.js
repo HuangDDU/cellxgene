@@ -15,11 +15,12 @@ import * as globals from "../../globals";
 import actions from "../../actions";
 import { getDiscreteCellEmbeddingRowIndex } from "../../util/stateManager/viewStackHelpers";
 
+// 参考降维选择按组件, 实现Trajectory组件实现轨迹选择按钮
 @connect((state) => ({
-    layoutChoice: state.layoutChoice, // TODO: really should clean up naming, s/layout/embedding/g
-    schema: state.annoMatrix?.schema,
-    crossfilter: state.obsCrossfilter,
-  }))
+  layoutChoice: state.layoutChoice, // TODO: really should clean up naming, s/layout/embedding/g
+  schema: state.annoMatrix?.schema,
+  crossfilter: state.obsCrossfilter,
+}))
 class Embedding extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -61,6 +62,7 @@ class Embedding extends React.PureComponent {
                   cursor: "pointer",
                 }}
               >
+                {/* 按钮内容展示 */}
                 {layoutChoice?.current}: {crossfilter.countSelected()} out of{" "}
                 {crossfilter.size()} cells
               </Button>
@@ -79,6 +81,7 @@ class Embedding extends React.PureComponent {
                 width: 400,
               }}
             >
+              {/* 按钮点击后弹出部分 */}
               <H4>Embedding Choice</H4>
               <p style={{ fontStyle: "italic" }}>
                 There are {schema?.dataframe?.nObs} cells in the entire dataset.

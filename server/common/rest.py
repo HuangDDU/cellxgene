@@ -308,8 +308,8 @@ def layout_obs_get(request, data_adaptor):
         )
 
 def trajectory_obs_get(request, data_adaptor):
-    # http://localhost:5005/api/v0.2/trajectory/obs?trajectory-name=ref&layout-name=umap
-    fields = request.args.getlist("layout-name", None)  # 暂时获得指定降维对应的轨迹
+    # http://localhost:5005/api/v0.2/trajectory/obs?trajectory-name=ref%40%40%40emb
+    fields = request.args.getlist("trajectory-name", None)  # trajectory-name: ref@@@emb
 
     try:
         return make_response(

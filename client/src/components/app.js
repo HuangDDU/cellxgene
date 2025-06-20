@@ -12,6 +12,7 @@ import Graph from "./graph/graph";
 import MenuBar from "./menubar";
 import Autosave from "./autosave";
 import Embedding from "./embedding";
+import Trajectory from "./trajectory";
 
 import actions from "../actions";
 
@@ -86,6 +87,7 @@ class App extends React.Component {
                 <MenuBar />
                 {/* 降维选择按钮 */}
                 <Embedding />
+                <Trajectory />
                 {/* 自动保存状态组件 */}
                 <Autosave />
                 {/* 图例组件，当着色模式为连续值时才显示 */}

@@ -135,7 +135,7 @@ class AnndataAdaptor(DataAdaptor):
                 "var": {"index": self.parameters.get("var_names"), "columns": []},
             },
             "layout": {"obs": []},
-            "trajectory": {"obs": []}, # 补充trajectory字段的注册, 后续添加
+            "trajectory": {"obs": []},  # 补充trajectory字段的注册, 后续添加
         }
         for ax in Axis:
             curr_axis = getattr(self.data, str(ax))
@@ -148,12 +148,17 @@ class AnndataAdaptor(DataAdaptor):
             layout_schema = {"name": layout, "type": "float32", "dims": [f"{layout}_0", f"{layout}_1"]}
             self.schema["layout"]["obs"].append(layout_schema)
             # 补充trajectory字段的注册
-            trajectory_schema = {
-                "name": layout,
-                "type": "float32",
-                "dims": [f"from_{layout}_0", f"from_{layout}_1",f"to_{layout}_0", f"to_{layout}_1"],
-            }
-            self.schema["trajectory"]["obs"].append(trajectory_schema)
+            # TODO: milestone_positions和wp_segments添加
+
+            for trajectory in self.get_trajectory_names():
+                trajectory_layout = f"{trajectory}@@@{layout}"  # 使用@@@连接轨迹和布局
+                trajectory_schema = {
+                    "name": trajectory_layout,
+                    "type": "float32",
+                    "dims": [f"from_{trajectory_layout}_0", f"from_{trajectory_layout}_1",
+                             f"to_{trajectory_layout}_0", f"to_{trajectory_layout}_1"],
+                }
+                self.schema["trajectory"]["obs"].append(trajectory_schema)
 
     def get_schema(self):
         return self.schema
@@ -208,7 +213,7 @@ class AnndataAdaptor(DataAdaptor):
         self.cell_count = self.data.shape[0]
         self.gene_count = self.data.shape[1]
         self._create_schema()
-        
+
         print("_create_schema result")
         import pprint
         pprint.pprint(self.schema)
@@ -337,15 +342,15 @@ class AnndataAdaptor(DataAdaptor):
     def get_embedding_array(self, ename, dims=2):
         full_embedding = self.data.obsm[f"X_{ename}"]
         return full_embedding[:, 0:dims]
-    
+
     def get_trajectory_names(self):
-        # TODO: 获取所有轨迹的名称
-        return []
-    
+        # return self.data.uns["cfe"]["trajectory_history_dict"].keys() # TODO: 获取所有轨迹的名称, 加入会导致维度不一样
+        return ["ref"]
+
     def get_trajectory_embedding_array(self, tname, ename):
         trajectory_embedding = self.data.uns["cfe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
         milestone_positions = trajectory_embedding["milestone_positions"]
-        
+
         def extract_coords(group_item):
             from_row = group_item[group_item["percentage"] == 0].iloc[0]
             to_row = group_item[group_item["percentage"] == 1].iloc[0]

@@ -5,7 +5,8 @@ import * as d3 from "d3";
 
 @connect((state) => ({
   annoMatrix: state.annoMatrix,
-  layoutChoice: state.layoutChoice,
+  // layoutChoice: state.layoutChoice,
+  trajectoryChoice: state.trajectoryChoice,
   showTrajectory: state.trajectory.showTrajectory,
 })) // redux的数据定义部分
 class Trajectory extends PureComponent {
@@ -16,14 +17,19 @@ class Trajectory extends PureComponent {
 
   fetchAsyncProps = async (props) => {
     // 从后端读取trajectory数据
-    const { annoMatrix, layoutChoice } = props.watchProps;
-    const [pathsDf] = await this.fetchData(annoMatrix, layoutChoice);
+    const { annoMatrix, trajectoryChoice } = props.watchProps;
+    console.log(
+      "Trajectory--fetchAsyncProps fetchData: trajectoryChoice:",
+      trajectoryChoice
+    );
+    // TODO: trajectoryChoice改变前后的轨迹边个数不一样, 导致更新错误, 需要改善
+    const [pathsDf] = await this.fetchData(annoMatrix, trajectoryChoice);
     console.log("Trajectory--fetchAsyncProps fetchData: pathsDf:", pathsDf);
-    const [cd0, cd1] = layoutChoice.currentDimNames;
-    const pathsFrom0 = pathsDf.col(`from_${cd0}`).asArray();
-    const pathsFrom1 = pathsDf.col(`from_${cd1}`).asArray();
-    const toFrom0 = pathsDf.col(`to_${cd0}`).asArray();
-    const toFrom1 = pathsDf.col(`to_${cd1}`).asArray();
+    const cds = trajectoryChoice.currentDimNames;
+    const pathsFrom0 = pathsDf.col(cds[0]).asArray();
+    const pathsFrom1 = pathsDf.col(cds[1]).asArray();
+    const toFrom0 = pathsDf.col(cds[2]).asArray();
+    const toFrom1 = pathsDf.col(cds[3]).asArray();
     const paths = [];
     for (let i = 0; i < pathsFrom0.length; i += 1) {
       paths.push([
@@ -37,20 +43,19 @@ class Trajectory extends PureComponent {
     return { paths };
   };
 
-  async fetchData(annoMatrix, layoutChoice) {
+  async fetchData(annoMatrix, trajectoryChoice) {
     // fetch all trajectory data need
     console.log("Trajectory--fetchData", this);
     const promises = [];
     // only milestone network temporarily
-    console.log("layoutChoice.current:", layoutChoice.current);
-    promises.push(annoMatrix.fetch("trajectory", layoutChoice.current));
+    promises.push(annoMatrix.fetch("trajectory", trajectoryChoice.current));
     return Promise.all(promises);
   }
 
   render() {
     const {
       annoMatrix,
-      layoutChoice,
+      trajectoryChoice,
       showTrajectory, // redux数据提取在组件中用props
     } = this.props;
     return (
@@ -59,7 +64,7 @@ class Trajectory extends PureComponent {
         promiseFn={this.fetchAsyncProps}
         watchProps={{
           annoMatrix,
-          layoutChoice,
+          trajectoryChoice,
         }}
       >
         <Async.Fulfilled>
@@ -78,6 +83,8 @@ class Trajectory extends PureComponent {
               );
             });
             // console.log(trajectoryPathSVGS);
+            // 参考整体里程碑绘制
+            // 暂时只有里程碑网络,里程碑结点还没有绘制
             return trajectoryPathSVGS;
           }}
         </Async.Fulfilled>

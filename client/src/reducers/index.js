@@ -22,6 +22,7 @@ import centroidLabels from "./centroidLabels";
 import pointDialation from "./pointDilation";
 import { gcMiddleware as annoMatrixGC } from "../annoMatrix";
 import trajectory from "./trajectory";
+import trajectoryChoice from "./trajectoryChoice";
 
 import undoableConfig from "./undoableConfig";
 
@@ -44,6 +45,7 @@ const Reducer = undoable(
     ["pointDilation", pointDialation],
     ["autosave", autosave],
     ["trajectory", trajectory],
+    ["trajectoryChoice", trajectoryChoice],
   ]),
   [
     "annoMatrix",
@@ -59,6 +61,7 @@ const Reducer = undoable(
     "genesets",
     "annotations",
     "trajectory",
+    "trajectoryChoice",
   ],
   undoableConfig
 );

@@ -10,6 +10,7 @@ import * as selnActions from "./selection";
 import * as annoActions from "./annotation";
 import * as viewActions from "./viewStack";
 import * as embActions from "./embedding";
+import * as trajectoryActions from "./trajectory";
 import * as genesetActions from "./geneset";
 
 function setGlobalConfig(config) {
@@ -82,6 +83,17 @@ function prefetchEmbeddings(annoMatrix) {
   available.forEach((embName) => annoMatrix.prefetch("emb", embName));
 }
 
+function prefetchTrajectory(annoMatrix) {
+  /*
+  prefetch annoMatrix for all embeddings
+  */
+  const { schema } = annoMatrix;
+  const available = schema.trajectory.obs.map((v) => v.name);
+  available.forEach((trajectoryName) =>
+    annoMatrix.prefetch("trajectory", trajectoryName)
+  );
+}
+
 /*
 Application bootstrap
 */
@@ -107,6 +119,7 @@ const doInitialDataLoad = () =>
       const annoMatrix = new AnnoMatrixLoader(baseDataUrl, schema.schema);
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
       prefetchEmbeddings(annoMatrix); // 预加载降维
+      prefetchTrajectory(annoMatrix); // 预加载轨迹
 
       dispatch({
         type: "annoMatrix: init complete",
@@ -117,6 +130,7 @@ const doInitialDataLoad = () =>
 
       const defaultEmbedding = config?.parameters?.default_embedding;
       const layoutSchema = schema?.schema?.layout?.obs ?? [];
+      console.log("defaultEmbedding", defaultEmbedding);
       if (
         defaultEmbedding &&
         layoutSchema.some((s) => s.name === defaultEmbedding)
@@ -171,10 +185,10 @@ const requestDifferentialExpression =
     dispatch({ type: "request differential expression started" });
     try {
       /*
-    Steps:
-    1. get the most differentially expressed genes
-    2. get expression data for each
-    */
+      Steps:
+      1. get the most differentially expressed genes
+      2. get expression data for each
+      */
       const { annoMatrix } = getState();
       const varIndexName = annoMatrix.schema.annotations.var.index;
 
@@ -273,6 +287,7 @@ export default {
   saveGenesetsAction: annoActions.saveGenesetsAction,
   needToSaveObsAnnotations: annoActions.needToSaveObsAnnotations,
   layoutChoiceAction: embActions.layoutChoiceAction,
+  trajectoryChoiceAction: trajectoryActions.trajectoryChoiceAction,
   setCellSetFromSelection: selnActions.setCellSetFromSelection,
   genesetDelete: genesetActions.genesetDelete,
   genesetAddGenes: genesetActions.genesetAddGenes,

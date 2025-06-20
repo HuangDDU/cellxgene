@@ -305,10 +305,11 @@ function _trajectoryLoader(baseURL, _field, query) {
   _expectSimpleQuery(query);
 
   const urlBase = `${baseURL}trajectory/obs`;
-  const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref"); // 暂时使用ref轨迹
-  const layoutQuery = _urlEncodeLabelQuery("layout-name", query);
-  const urlQuery = `${trajectoryQuery}&${layoutQuery}`;
-  const url = `${urlBase}?${urlQuery}`; // 轨迹名称和降维名称共同组成了查询字符串
+  // const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref"); // 暂时使用ref轨迹
+  // const layoutQuery = _urlEncodeLabelQuery("layout-name", query);
+  // const urlQuery = `${trajectoryQuery}&${layoutQuery}`;
+  const urlQuery = _urlEncodeLabelQuery("trajectory-name", query); // 轨迹名称和降维名称共同组成了查询字符串, 用@@@拼接
+  const url = `${urlBase}?${urlQuery}`;
   console.log("loader _trajectoryLoader:", url);
   // /api/v0.2/trajectory/obs?layout-name=umap
   return () => doBinaryRequest(url);
