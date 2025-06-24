@@ -107,7 +107,6 @@ export default class AnnoMatrix {
       var: Dataframe.empty(this.rowIndex),
       emb: Dataframe.empty(this.rowIndex),
       X: Dataframe.empty(this.rowIndex),
-      // TODO: uns结构的注册
       trajectory: Dataframe.empty(this.rowIndex),
     };
     this._pendingLoad = {
@@ -119,6 +118,8 @@ export default class AnnoMatrix {
     };
     this._whereCache = {};
     this._gcInfo = new Map();
+
+    this.uns = {}; // uns结构的注册在action/index.js里
   }
 
   /**

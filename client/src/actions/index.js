@@ -6,6 +6,7 @@ import {
   dispatchNetworkErrorMessageToUser,
 } from "../util/actionHelpers";
 import { loadUserColorConfig } from "../util/stateManager/colorHelpers";
+import { smartConvertToDataframe } from "../util/stateManager/unsHelpers";
 import * as selnActions from "./selection";
 import * as annoActions from "./annotation";
 import * as viewActions from "./viewStack";
@@ -53,6 +54,13 @@ async function configFetch(dispatch) {
   });
 }
 
+async function unsFetch() {
+  return fetchJson("uns").then((uns) => 
+    // create subobject dataframe from object
+     smartConvertToDataframe(uns, "danfo")
+  );
+}
+
 async function genesetsFetch(dispatch, config) {
   /* request genesets ONLY if the backend supports the feature */
   const defaultResponse = {
@@ -85,7 +93,7 @@ function prefetchEmbeddings(annoMatrix) {
 
 function prefetchTrajectory(annoMatrix) {
   /*
-  prefetch annoMatrix for all embeddings
+  prefetch annoMatrix for all trajectory
   */
   const { schema } = annoMatrix;
   const available = schema.trajectory.obs.map((v) => v.name);
@@ -120,6 +128,7 @@ const doInitialDataLoad = () =>
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
       prefetchEmbeddings(annoMatrix); // 预加载降维
       prefetchTrajectory(annoMatrix); // 预加载轨迹
+      annoMatrix.uns = await unsFetch(dispatch); // 加载全部无结构的数据
 
       dispatch({
         type: "annoMatrix: init complete",
@@ -185,10 +194,10 @@ const requestDifferentialExpression =
     dispatch({ type: "request differential expression started" });
     try {
       /*
-      Steps:
-      1. get the most differentially expressed genes
-      2. get expression data for each
-      */
+        Steps:
+        1. get the most differentially expressed genes
+        2. get expression data for each
+        */
       const { annoMatrix } = getState();
       const varIndexName = annoMatrix.schema.annotations.var.index;
 

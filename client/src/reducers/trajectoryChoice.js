@@ -1,13 +1,12 @@
 function bestDefaultTrajectory(trajectory) {
   console.log("trajectory", trajectory);
-  return "ref@@@umap";
+  return "None";
 }
 
-function setToDefaultTrajectory(schema) {
-  const available = schema.trajectory.obs.map((v) => v.name).sort();
+function setToDefaultTrajectory(annoMatrix) {
+  const available = Object.keys(annoMatrix.uns.cfe.trajectory_history_dict);
   const current = bestDefaultTrajectory(available);
-  const currentDimNames = schema.trajectory.obsByName[current].dims;
-  return { available, current, currentDimNames };
+  return { available, current };
 }
 
 const TrajectoryChoice = (
@@ -26,15 +25,13 @@ const TrajectoryChoice = (
       console.log("TrajectoryChoice action: initial data load complete");
       return {
         ...state,
-        ...setToDefaultTrajectory(annoMatrix.schema),
+        ...setToDefaultTrajectory(annoMatrix),
       };
     }
 
     case "set trajectory choice": {
-      const { schema } = nextSharedState.annoMatrix;
       const current = action.trajectoryChoice;
-      const currentDimNames = schema.trajectory.obsByName[current].dims;
-      return { ...state, current, currentDimNames };
+      return { ...state, current };
     }
 
     default: {

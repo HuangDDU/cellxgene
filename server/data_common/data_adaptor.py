@@ -66,7 +66,7 @@ class DataAdaptor(metaclass=ABCMeta):
     def get_embedding_array(self, ename, dims=2):
         """return an numpy array for the given pre-computed embedding name."""
         pass
-
+    
     @abstractmethod
     def get_trajectory_names(self):
         """return a list of pre-computed trajectory names"""
@@ -149,6 +149,11 @@ class DataAdaptor(metaclass=ABCMeta):
         """
         Return current schema
         """
+        pass
+    
+    @abstractmethod
+    def get_uns(self):
+        """return the unstructured data with dict format: adata.uns"""
         pass
 
     @abstractmethod
@@ -450,7 +455,7 @@ class DataAdaptor(metaclass=ABCMeta):
                 df = pd.concat(trajectory_data, axis=1, copy=False)
             else:
                 df = pd.DataFrame()
-            print(df)
+            # print(df)
             fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)
 
         return bytes(fbs)  # 这里必须转化为byte

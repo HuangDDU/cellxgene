@@ -163,6 +163,49 @@ class AnndataAdaptor(DataAdaptor):
     def get_schema(self):
         return self.schema
 
+    def get_uns(self):
+        import copy
+        import json
+        import numpy as np
+        import pandas as pd
+        from json import JSONEncoder
+
+        class CustomJSONEncoder(JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()  # 将 numpy 数组转为 Python list
+                elif isinstance(obj, pd.DataFrame):
+                    return obj.to_dict(orient="records")  # 将 DataFrame 转为字典列表
+                elif isinstance(obj, (np.int64, np.int32, np.float64, np.float32)):
+                    return int(obj) if isinstance(obj, (np.int64, np.int32)) else float(obj)
+                if isinstance(obj, (np.bool_, bool)):
+                    return bool(obj)
+                return JSONEncoder.default(self, obj)
+
+        uns = copy.deepcopy(self.data.uns) # 不影响adata中本身的结果
+        trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  # uns只保存轨迹结果
+
+        # scale wp_segments and milestone_positions with cell embedding parameters
+        for tk in trajectory_history_dict.keys():
+            te = trajectory_history_dict[tk]["trajectory_embedding"]
+            for ename in te.keys():
+                # embedding, waypoint_segments, milestone_positions
+                cell_embedding = self.data.obsm[f"X_{ename}"][:, :2]
+                wp_segments = te[ename]["wp_segments"]
+                milestone_positions = te[ename]["milestone_positions"]
+                # scale
+                wp_segments[["comp_1", "comp_2"]] = DataAdaptor.normalize_trajectory_embedding(wp_segments[["comp_1", "comp_2"]].values, cell_embedding)
+                milestone_positions[["comp_1", "comp_2"]] = DataAdaptor.normalize_trajectory_embedding(milestone_positions[["comp_1", "comp_2"]].values, cell_embedding)
+                # print(tk, ename, "wp_segments", wp_segments)
+                # print(tk, ename, "milestone_positions", milestone_positions)
+                # update
+                te[ename] = {"wp_segments": wp_segments, "milestone_positions": milestone_positions}
+            # update
+            trajectory_history_dict[tk]["trajectory_embedding"] = te
+
+        uns = {"cfe": {"trajectory_history_dict": trajectory_history_dict}}
+        return json.dumps(uns, cls=CustomJSONEncoder, indent=2)
+
     def _load_data(self, data_locator):
         # as of AnnData 0.6.19, backed mode performs initial load fast, but at the
         # cost of significantly slower access to X data.

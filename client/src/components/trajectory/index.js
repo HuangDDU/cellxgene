@@ -1,3 +1,4 @@
+// TODO:
 import React from "react";
 import { connect } from "react-redux";
 import {
@@ -15,7 +16,6 @@ import actions from "../../actions";
 
 // 轨迹选择按钮,参考降维选择按钮
 @connect((state) => ({
-  layoutChoice: state.layoutChoice,
   trajectoryChoice: state.trajectoryChoice,
 }))
 class Trajectory extends React.PureComponent {
@@ -25,7 +25,7 @@ class Trajectory extends React.PureComponent {
   };
 
   render() {
-    const { layoutChoice, trajectoryChoice } = this.props;
+    const { trajectoryChoice } = this.props;
     // console.log("Trajectory render trajectoryChoice", trajectoryChoice)
     return (
       <ButtonGroup
@@ -78,7 +78,6 @@ class Trajectory extends React.PureComponent {
               <TrajectoryChoices
                 onChange={this.handleTrajectoryChoice}
                 trajectoryChoice={trajectoryChoice}
-                layoutChoice={layoutChoice}
               />
             </div>
           }
@@ -90,18 +89,15 @@ class Trajectory extends React.PureComponent {
 
 export default Trajectory;
 
-const TrajectoryChoices = ({ onChange, trajectoryChoice, layoutChoice }) => {
+const TrajectoryChoices = ({ onChange, trajectoryChoice }) => {
   const { available } = trajectoryChoice;
   return (
     <RadioGroup onChange={onChange} selectedValue={trajectoryChoice.current}>
       {available.map((item) => (
-          <Radio
-            label={item}
-            value={item}
-            key={item}
-            disabled={item.split("@@@")[1] !== layoutChoice.current}
-          />
-        ))}
+        <Radio label={item} value={item} key={item} />
+      ))}
+      {/* 不展示轨迹 */}
+      <Radio label="None" value="None" key="None" />
     </RadioGroup>
   );
 };

@@ -299,7 +299,11 @@ function _writableCategoryTypeCheck(colSchema) {
   }
 }
 
-// _xxxLoader向后端请求
+// // _xxxLoader向后端请求
+// function _unsLoader(baseURL){
+//     // 直接请求解析adata.uns数据，解析JSON格式
+//     // /api/v0.2/uns
+// }
 
 function _trajectoryLoader(baseURL, _field, query) {
   _expectSimpleQuery(query);
