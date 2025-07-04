@@ -1,4 +1,4 @@
-// TODO:
+// TODO: 不是简单按钮，而是里程碑网络的轨迹预览框
 import React from "react";
 import { connect } from "react-redux";
 import {

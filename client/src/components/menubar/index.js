@@ -242,6 +242,23 @@ class MenuBar extends React.PureComponent {
           zIndex: 3,
         }}
       >
+        {/* 展示从右到左的顺序 */}
+        {/* TODO: 保存按钮 */}
+        <Tooltip
+          content="TODO: save current view to pdf or png"
+          position="bottom"
+          disabled={graphInteractionMode === "zoom"}
+        >
+          <AnchorButton
+            className={styles.menubarButton}
+            type="button"
+            // data-testid="trajectory-toggle"
+            icon="camera"
+            // onClick={}
+            // active={showTrajectory}
+            // intent={showTrajectory ? "primary" : "none"}
+          />
+        </Tooltip>
         <UndoRedoReset
           dispatch={dispatch}
           undoDisabled={undoDisabled}
@@ -280,6 +297,7 @@ class MenuBar extends React.PureComponent {
           />
         </Tooltip>
         {/* 轨迹展示开关, 参考了上述的中心标签展示按钮 */}
+        {/* TODO：此按钮开关为轨迹预览界面的展示按钮 */}
         <Tooltip
           content="When a trajectory is chosen, show trajectory on the graph"
           position="bottom"
