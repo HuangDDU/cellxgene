@@ -71,7 +71,7 @@ dominant pattern in cellxgene.
 /**
 Dataframe
 **/
-
+// 类似于Python的DataFrame
 class Dataframe {
   /**
   Constructors & factories
@@ -121,6 +121,10 @@ class Dataframe {
     this.__compile(__columnsAccessor);
     Object.freeze(this);
   }
+
+  // TODO: 复杂查询操作可以直接使用danfojs, 暂时不做当前Dataframe与danfo.DataFrame的同步，底层数据存储不同
+  // getDanfo(){
+  // }
 
   static __errorChecks(dims, columnarData, rowIndex, colIndex) {
     const [nRows, nCols] = dims;

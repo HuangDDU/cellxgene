@@ -9,6 +9,7 @@ import * as ControlsHelpers from "./controlsHelpers";
 import * as AnnotationsHelpers from "./annotationsHelpers";
 import * as SchemaHelpers from "./schemaHelpers";
 import * as MatrixFBS from "./matrix";
+import * as UnsHelpers from "./unsHelpers";
 
 export {
   ColorHelpers,
@@ -16,4 +17,5 @@ export {
   AnnotationsHelpers,
   SchemaHelpers,
   MatrixFBS,
+  UnsHelpers,
 };

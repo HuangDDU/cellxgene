@@ -17,6 +17,7 @@ System wide schema assumptions:
 
 export function indexEntireSchema(schema) {
   /* Index schema for ease of use */
+  // 方便索引schema
   schema.annotations.obsByName = fromEntries(
     schema.annotations?.obs?.columns?.map((v) => [v.name, v]) ?? []
   );
@@ -28,6 +29,13 @@ export function indexEntireSchema(schema) {
   );
   schema.layout.varByName = fromEntries(
     schema.layout?.var?.map((v) => [v.name, v]) ?? []
+  );
+  // 补充trajectory字段的注册
+  schema.trajectory.obsByName = fromEntries(
+    schema.trajectory.obs?.map((v) => [v.name, v]) ?? []
+  );
+  schema.trajectory.varByName = fromEntries(
+    schema.trajectory.var?.map((v) => [v.name, v]) ?? []
   );
 
   return schema;

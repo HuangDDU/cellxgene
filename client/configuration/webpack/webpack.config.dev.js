@@ -36,6 +36,10 @@ const devConfig = {
           publicPath: "..",
         },
       },
+      {
+        test: /\.(csv)$/,
+        use: ["raw-loader"], // 将CSV作为原始文本导入
+      },
     ],
   },
   plugins: [
@@ -47,9 +51,11 @@ const devConfig = {
       filename: "static/[name].css",
     }),
     new webpack.NoEmitOnErrorsPlugin(),
-    new webpack.DefinePlugin({
-      __REACT_DEVTOOLS_GLOBAL_HOOK__: "({ isDisabled: true })",
-    }),
+    // 注释掉后续代码可以在浏览器开启开发者工具
+    // 相较于直接使用生产环境启动cellxgene launch，可以查看到准确的组件名称
+    // new webpack.DefinePlugin({
+    //   __REACT_DEVTOOLS_GLOBAL_HOOK__: "({ isDisabled: true })",
+    // }),
     new webpack.DefinePlugin({
       // webpack 5 no longer polyfills NodeJS modules, so fake the one we need
       "process.env": JSON.stringify({

@@ -1,4 +1,6 @@
+// 模仿该组件设置trajectoryChoice组件
 /*
+启发式搜索默认的layout, 最优先搜索顺序如下
 we have a UI heuristic to pick the default layout, based on assumptions
 about commonly used names.  Preferentially, pick in the following order:
 
@@ -8,6 +10,7 @@ about commonly used names.  Preferentially, pick in the following order:
   4. give up, use the first available
 */
 function bestDefaultLayout(layouts) {
+  // 从前到后搜索
   const preferredNames = ["umap", "tsne", "pca"];
   const idx = preferredNames.findIndex((name) => layouts.indexOf(name) !== -1);
   if (idx !== -1) return preferredNames[idx];
@@ -34,6 +37,7 @@ const LayoutChoice = (
     case "initial data load complete": {
       // set default to default
       const { annoMatrix } = nextSharedState;
+      console.log("LayoutChoice action: initial data load complete");
       return {
         ...state,
         ...setToDefaultLayout(annoMatrix.schema),

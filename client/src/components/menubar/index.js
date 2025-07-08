@@ -231,6 +231,19 @@ class MenuBar extends React.PureComponent {
           zIndex: 3,
         }}
       >
+        {/* 展示从右到左的顺序 */}
+        {/* TODO: 保存按钮 */}
+        <Tooltip
+          content="TODO: save current view to pdf or png"
+          position="bottom"
+          disabled={graphInteractionMode === "zoom"}
+        >
+          <AnchorButton
+            className={styles.menubarButton}
+            type="button"
+            icon="camera"
+          />
+        </Tooltip>
         <UndoRedoReset
           dispatch={dispatch}
           undoDisabled={undoDisabled}

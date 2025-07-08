@@ -6,10 +6,12 @@ import {
   dispatchNetworkErrorMessageToUser,
 } from "../util/actionHelpers";
 import { loadUserColorConfig } from "../util/stateManager/colorHelpers";
+import { smartConvertToDataframe } from "../util/stateManager/unsHelpers";
 import * as selnActions from "./selection";
 import * as annoActions from "./annotation";
 import * as viewActions from "./viewStack";
 import * as embActions from "./embedding";
+import * as trajectoryActions from "./trajectory";
 import * as genesetActions from "./geneset";
 
 function setGlobalConfig(config) {
@@ -52,6 +54,13 @@ async function configFetch(dispatch) {
   });
 }
 
+async function unsFetch() {
+  return fetchJson("uns").then((uns) =>
+    // create subobject dataframe from object
+    smartConvertToDataframe(uns, "danfo")
+  );
+}
+
 async function genesetsFetch(dispatch, config) {
   /* request genesets ONLY if the backend supports the feature */
   const defaultResponse = {
@@ -82,6 +91,17 @@ function prefetchEmbeddings(annoMatrix) {
   available.forEach((embName) => annoMatrix.prefetch("emb", embName));
 }
 
+function prefetchTrajectory(annoMatrix) {
+  /*
+  prefetch annoMatrix for all trajectory
+  */
+  const { schema } = annoMatrix;
+  const available = schema.trajectory.obs.map((v) => v.name);
+  available.forEach((trajectoryName) =>
+    annoMatrix.prefetch("trajectory", trajectoryName)
+  );
+}
+
 /*
 Application bootstrap
 */
@@ -90,18 +110,26 @@ const doInitialDataLoad = () =>
     dispatch({ type: "initial data load start" });
 
     try {
+      // 直接请求config, schema
       const [config, schema] = await Promise.all([
         configFetch(dispatch),
         schemaFetch(dispatch),
         userColorsFetchAndLoad(dispatch),
       ]);
+      // 配置设置, anndata版本设置
+      console.log("doInitialDataLoad config", config);
+      console.log("doInitialDataLoad schema", schema);
 
       genesetsFetch(dispatch, config);
 
       const baseDataUrl = `${globals.API.prefix}${globals.API.version}`;
+      // 关键: 创建 AnnoMatrixLoader(AnnoMatrix抽象类的实现) 实例
       const annoMatrix = new AnnoMatrixLoader(baseDataUrl, schema.schema);
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
-      prefetchEmbeddings(annoMatrix);
+      prefetchEmbeddings(annoMatrix); // 预加载降维
+      prefetchTrajectory(annoMatrix); // 预加载轨迹
+      annoMatrix.uns = await unsFetch(dispatch); // 加载全部无结构的数据
+      // TODO: 后续的uns按需加载，像_cache中数据一样加载需要的列，这里加载需要的键值对
 
       dispatch({
         type: "annoMatrix: init complete",
@@ -112,6 +140,7 @@ const doInitialDataLoad = () =>
 
       const defaultEmbedding = config?.parameters?.default_embedding;
       const layoutSchema = schema?.schema?.layout?.obs ?? [];
+      console.log("defaultEmbedding", defaultEmbedding);
       if (
         defaultEmbedding &&
         layoutSchema.some((s) => s.name === defaultEmbedding)
@@ -166,10 +195,10 @@ const requestDifferentialExpression =
     dispatch({ type: "request differential expression started" });
     try {
       /*
-    Steps:
-    1. get the most differentially expressed genes
-    2. get expression data for each
-    */
+        Steps:
+        1. get the most differentially expressed genes
+        2. get expression data for each
+        */
       const { annoMatrix } = getState();
       const varIndexName = annoMatrix.schema.annotations.var.index;
 
@@ -268,6 +297,7 @@ export default {
   saveGenesetsAction: annoActions.saveGenesetsAction,
   needToSaveObsAnnotations: annoActions.needToSaveObsAnnotations,
   layoutChoiceAction: embActions.layoutChoiceAction,
+  trajectoryChoiceAction: trajectoryActions.trajectoryChoiceAction,
   setCellSetFromSelection: selnActions.setCellSetFromSelection,
   genesetDelete: genesetActions.genesetDelete,
   genesetAddGenes: genesetActions.genesetAddGenes,

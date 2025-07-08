@@ -28,6 +28,7 @@ const promiseThrottle = new PromiseLimit(5);
 
 export default class AnnoMatrixLoader extends AnnoMatrix {
   /*
+  AnnoMatrix实现，使用CXG REST API代理HTTP服务器用作基础（非视图）实例
   AnnoMatrix implementation which proxies to HTTP server using the CXG REST API.
   Used as the base (non-view) instance.
 
@@ -238,6 +239,7 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
     */
     let doRequest;
     let priority = 10; // default fetch priority
+    console.log(`_doLoad: ${field} ${query}`);
 
     switch (field) {
       case "obs":
@@ -252,6 +254,11 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
       case "emb": {
         doRequest = _embLoader(this.baseURL, field, query);
         priority = 0; // high prio load for embeddings
+        break;
+      }
+      case "trajectory": {
+        // 轨迹查询
+        doRequest = _trajectoryLoader(this.baseURL, field, query);
         break;
       }
       default:
@@ -269,6 +276,7 @@ export default class AnnoMatrixLoader extends AnnoMatrix {
     );
 
     result = normalizeResponse(field, query, this.schema, result);
+    // console.log("trajectory result", result);
 
     return [whereCacheUpdate, result];
   }
@@ -291,12 +299,34 @@ function _writableCategoryTypeCheck(colSchema) {
   }
 }
 
+// // _xxxLoader向后端请求
+// function _unsLoader(baseURL){
+//     // 直接请求解析adata.uns数据，解析JSON格式
+//     // /api/v0.2/uns
+// }
+
+function _trajectoryLoader(baseURL, _field, query) {
+  _expectSimpleQuery(query);
+
+  const urlBase = `${baseURL}trajectory/obs`;
+  // const trajectoryQuery = _urlEncodeLabelQuery("trajectory-name", "ref"); // 暂时使用ref轨迹
+  // const layoutQuery = _urlEncodeLabelQuery("layout-name", query);
+  // const urlQuery = `${trajectoryQuery}&${layoutQuery}`;
+  const urlQuery = _urlEncodeLabelQuery("trajectory-name", query); // 轨迹名称和降维名称共同组成了查询字符串, 用@@@拼接
+  const url = `${urlBase}?${urlQuery}`;
+  console.log("loader _trajectoryLoader:", url);
+  // /api/v0.2/trajectory/obs?layout-name=umap
+  return () => doBinaryRequest(url);
+}
+
 function _embLoader(baseURL, _field, query) {
   _expectSimpleQuery(query);
 
   const urlBase = `${baseURL}layout/obs`;
   const urlQuery = _urlEncodeLabelQuery("layout-name", query);
   const url = `${urlBase}?${urlQuery}`;
+  console.log("loader _embLoader:", url);
+  // /api/v0.2/layout/obs?layout-name=emb
   return () => doBinaryRequest(url);
 }
 
@@ -309,6 +339,7 @@ function _obsOrVarLoader(baseURL, field, query) {
   return () => doBinaryRequest(url);
 }
 
+// 此处向后端请求基因表达向量
 function _XLoader(baseURL, field, query) {
   _expectComplexQuery(query);
 
