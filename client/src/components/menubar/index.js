@@ -45,7 +45,6 @@ import { getEmbSubsetView } from "../../util/stateManager/viewStackHelpers";
     tosURL: state.config?.parameters?.about_legal_tos,
     privacyURL: state.config?.parameters?.about_legal_privacy,
     categoricalSelection: state.categoricalSelection,
-    showTrajectory: state.trajectory.showTrajectory,
   };
 })
 class MenuBar extends React.PureComponent {
@@ -192,15 +191,6 @@ class MenuBar extends React.PureComponent {
     dispatch(actions.resetSubsetAction());
   };
 
-  handleTrajectoryChange = () => {
-    const { dispatch, showTrajectory } = this.props;
-
-    dispatch({
-      type: "show trajectory",
-      showTrajectory: !showTrajectory,
-    });
-  };
-
   render() {
     const {
       dispatch,
@@ -216,7 +206,6 @@ class MenuBar extends React.PureComponent {
       colorAccessor,
       subsetPossible,
       subsetResetPossible,
-      showTrajectory,
     } = this.props;
     const { pendingClipPercentiles } = this.state;
 
@@ -252,11 +241,7 @@ class MenuBar extends React.PureComponent {
           <AnchorButton
             className={styles.menubarButton}
             type="button"
-            // data-testid="trajectory-toggle"
             icon="camera"
-            // onClick={}
-            // active={showTrajectory}
-            // intent={showTrajectory ? "primary" : "none"}
           />
         </Tooltip>
         <UndoRedoReset
@@ -294,23 +279,6 @@ class MenuBar extends React.PureComponent {
             active={showCentroidLabels}
             intent={showCentroidLabels ? "primary" : "none"}
             disabled={!isColoredByCategorical}
-          />
-        </Tooltip>
-        {/* 轨迹展示开关, 参考了上述的中心标签展示按钮 */}
-        {/* TODO：此按钮开关为轨迹预览界面的展示按钮 */}
-        <Tooltip
-          content="When a trajectory is chosen, show trajectory on the graph"
-          position="bottom"
-          disabled={graphInteractionMode === "zoom"}
-        >
-          <AnchorButton
-            className={styles.menubarButton}
-            type="button"
-            data-testid="trajectory-toggle"
-            icon="layout"
-            onClick={this.handleTrajectoryChange}
-            active={showTrajectory}
-            intent={showTrajectory ? "primary" : "none"}
           />
         </Tooltip>
         <ButtonGroup className={styles.menubarButton}>

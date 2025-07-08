@@ -8,8 +8,10 @@ import * as dfd from "danfojs";
   layoutChoice: state.layoutChoice,
   trajectoryChoice: state.trajectoryChoice,
   showTrajectory: state.trajectory.showTrajectory,
+  milestoneNodeSize: state.trajectory.milestoneNodeSize,
+  milestoneEdgeWidth: state.trajectory.milestoneEdgeWidth,
 })) // redux的数据定义部分
-class Trajectory extends React.PureComponent {
+export default class Trajectory extends React.PureComponent {
   static watchAsync(props, prevProps) {
     // 浅比较数据, 发生变换时重新请求, 执行promiseFn.
     return !shallowEqual(props.watchProps, prevProps.watchProps);
@@ -25,8 +27,8 @@ class Trajectory extends React.PureComponent {
       annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
         .trajectory_embedding[layoutChoice.current].milestone_positions;
     // milestonePositionDf.setIndex({ column: "waypoint_id", inplace: true });
-    console.log("milestonePositionDf.shape: ", milestonePositionDf.shape);
-    milestonePositionDf.print();
+    // console.log("milestonePositionDf.shape: ", milestonePositionDf.shape);
+    // milestonePositionDf.print();
 
     // group后apply内部保存到列表里，后续集中构造danfo.DataFrame
     const applyResults = [];
@@ -44,8 +46,8 @@ class Trajectory extends React.PureComponent {
     });
     const milestonePathDf = new dfd.DataFrame(applyResults); // 手动创建新 DataFrame
     // milestonePathDf.setIndex({ column: "group", inplace: true });
-    console.log("milestonePathDf.shape: ", milestonePathDf.shape);
-    milestonePathDf.print();
+    // console.log("milestonePathDf.shape: ", milestonePathDf.shape);
+    // milestonePathDf.print();
 
     return { milestonePositionDf, milestonePathDf };
   };
@@ -56,8 +58,11 @@ class Trajectory extends React.PureComponent {
       annoMatrix,
       trajectoryChoice,
       layoutChoice,
-      showTrajectory, // redux数据提取在组件中用props
+      showTrajectory,
+      milestoneNodeSize,
+      milestoneEdgeWidth,
     } = this.props;
+
     return (
       <Async
         watchFn={Trajectory.watchAsync}
@@ -116,6 +121,7 @@ class Trajectory extends React.PureComponent {
                     [row.from_comp_1, row.from_comp_2],
                     [row.to_comp_1, row.to_comp_2],
                   ]}
+                  milestoneEdgeWidth={milestoneEdgeWidth}
                   key={row.group}
                 />
               );
@@ -128,6 +134,7 @@ class Trajectory extends React.PureComponent {
                 trajectorySVGS.push(
                   <Milestone
                     position={[row.comp_1, row.comp_2]}
+                    milestoneNodeSize={milestoneNodeSize}
                     key={row.milestone_id}
                   />
                 );
@@ -151,7 +158,7 @@ class Trajectory extends React.PureComponent {
 // 函数式组件
 // TODO: 不仅仅绘制直线，而且绘制Milestone, Waypoint和轨迹曲线
 // 边
-const MilestonePath = ({ path }) => (
+const MilestonePath = ({ path, milestoneEdgeWidth }) => (
   <g>
     <line
       x1={path[0][0]}
@@ -160,20 +167,20 @@ const MilestonePath = ({ path }) => (
       y2={path[1][1]}
       fill="none"
       stroke="green"
-      strokeWidth={0.02}
+      strokeWidth={milestoneEdgeWidth * 0.01}
     />
   </g>
 );
 
 // 节点
-const Milestone = ({ position }) => (
+const Milestone = ({ position, milestoneNodeSize }) => (
   <g>
     {/* 暂时矩形位置能够绘制正确，圆圈绘制不正确，可能是由于底部gl绘制散点的干扰 */}
     <rect
       x={position[0]}
       y={position[1]}
-      width={0.02}
-      height={0.02}
+      width={milestoneNodeSize * 0.01}
+      height={milestoneNodeSize * 0.01}
       fill="red"
     />
   </g>
@@ -202,5 +209,3 @@ const MilestoneLabel = ({ position, label, inverseTransform }) => (
     /> */}
   </g>
 );
-
-export default Trajectory;

@@ -11,7 +11,6 @@ import Graph from "./graph/graph";
 import MenuBar from "./menubar";
 import Autosave from "./autosave";
 import Embedding from "./embedding";
-import Trajectory from "./trajectory";
 
 import actions from "../actions";
 
@@ -80,12 +79,10 @@ class App extends React.Component {
             {(viewportRef) => (
               // 空白标签用于包裹下面的组件，下面的组件仍然是子组件
               <>
-                {/* 这里不同h2标签的位置由上层Layout组件决定 */}
                 {/* 菜单栏，多个按钮包括了差异表达、选择、前后跳转等功能 */}
                 <MenuBar />
                 {/* 降维选择按钮 */}
                 <Embedding />
-                <Trajectory />
                 {/* 自动保存状态组件 */}
                 <Autosave />
                 {/* 图例组件，当着色模式为连续值时才显示 */}

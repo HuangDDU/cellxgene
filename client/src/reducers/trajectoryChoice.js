@@ -1,6 +1,6 @@
 function bestDefaultTrajectory(trajectory) {
   console.log("trajectory", trajectory);
-  return "None";
+  return "ref";
 }
 
 function setToDefaultTrajectory(annoMatrix) {

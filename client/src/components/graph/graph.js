@@ -21,7 +21,9 @@ import CentroidLabels from "./overlays/centroidLabels";
 import actions from "../../actions";
 import renderThrottle from "../../util/renderThrottle";
 
-import Trajectory from "./overlays/trajectory";
+// import Trajectory from "./overlays/trajectory";
+// import TrajectorySVG from "./overlays/trajectorySVG";
+import TrajectoryCytoscape from "./overlays/trajectoryCytoscape";
 
 import {
   flagBackground,
@@ -87,6 +89,7 @@ function createModelTF() {
   colors: state.colors,
   pointDilation: state.pointDilation,
   genesets: state.genesets.genesets,
+  anchorTrajectory: state.trajectory.anchorTrajectory,
 }))
 class Graph extends React.Component {
   static createReglState(canvas) {
@@ -862,9 +865,43 @@ class Graph extends React.Component {
       layoutChoice,
       pointDilation,
       crossfilter,
+      anchorTrajectory,
     } = this.props;
     const { modelTF, projectionTF, camera, viewport, regl } = this.state;
     const cameraTF = camera?.view()?.slice();
+
+    const { width, height } = viewport;
+    const transformPointForCytoscape = (point) => {
+      // 1. 应用模型变换 (数据坐标 → WebGL坐标)
+      const webglCoords = vec2.transformMat3(
+        vec2.create(),
+        vec2.fromValues(point[0], point[1]),
+        modelTF
+      );
+
+      // 2. 应用相机变换
+      let cameraCoords;
+      if (cameraTF) {
+        cameraCoords = vec2.transformMat3(webglCoords, webglCoords, cameraTF);
+      } else {
+        // 初始如果没有相机变换，则直接使用WebGL坐标
+        cameraCoords = webglCoords;
+      }
+
+      // 3. 应用投影变换
+      const projectedCoords = vec2.transformMat3(
+        cameraCoords,
+        cameraCoords,
+        projectionTF
+      );
+
+      // 4. 映射到屏幕坐标
+      return [
+        ((projectedCoords[0] + 1) * width) / 2,
+        -((projectedCoords[1] + 1) / 2 - 1) * height,
+      ];
+    };
+    const TrajectoryCytoscapeZIndex = anchorTrajectory ? 2 : 1; // 判断是否使用Cytoscape按钮
 
     return (
       <div
@@ -876,24 +913,34 @@ class Graph extends React.Component {
         }}
       >
         {/* 分为多个图层 */}
+        {/* TODO: 使用Cytoscape渲染的轨迹需要在SVG外层绘制，不能在GraphOverlayLayer的g标签内绘制 */}
+        <div
+          style={{ position: "absolute", zIndex: TrajectoryCytoscapeZIndex }}
+        >
+          {/* 默认图层为1，如果要激活 Cytoscape轨迹图层，需要将其zIndex设置为2 */}
+          <TrajectoryCytoscape
+            width={viewport.width}
+            height={viewport.height}
+            transformPointForCytoscape={transformPointForCytoscape} // 用于将点转换为Cytoscape坐标
+          />
+        </div>
         {/* GraphOverlayLayer层包含了标签、注释、辅助线等，会随着其他按钮的选择进行变化*/}
         <GraphOverlayLayer
           width={viewport.width}
           height={viewport.height}
-          cameraTF={cameraTF} // 摄像机变换矩阵，适配手动放大缩小
-          modelTF={modelTF} // 模型变换矩阵，适配WebGL坐标系
-          projectionTF={projectionTF} // 投影变换矩阵，适配浏览器坐标系
+          cameraTF={cameraTF}
+          modelTF={modelTF}
+          projectionTF={projectionTF}
           handleCanvasEvent={
             graphInteractionMode === "zoom" ? this.handleCanvasEvent : undefined
           }
         >
-          {/* 轨迹, 像文本标签一样, 点击时显示 */}
-          {/* TODO: 透明添加，图层应该在聚类标签中心的下方 */}
-          <Trajectory />
+          {/* 轨迹, 像文本标签一样, 点击时显示, 使用Cytoscape代替此处SVG实现*/}
+          {/* <Trajectory/> */}
+          {/* <TrajectorySVG /> */}
           {/* 聚类中心标签，显示时背景细胞变透明 */}
           <CentroidLabels />
         </GraphOverlayLayer>
-
         {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}
         <svg
           id="lasso-layer"
