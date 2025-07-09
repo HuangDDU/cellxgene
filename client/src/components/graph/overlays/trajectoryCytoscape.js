@@ -10,8 +10,8 @@ import * as dfd from "danfojs";
   trajectoryChoice: state.trajectoryChoice,
   showTrajectory: state.trajectory.showTrajectory,
   trajectoryType: state.trajectory.trajectoryType,
-  milestoneNodeSize: state.trajectory.milestoneNodeSize,
-  milestoneEdgeWidth: state.trajectory.milestoneEdgeWidth,
+  nodeSize: state.trajectory.nodeSize,
+  edgeWidth: state.trajectory.edgeWidth,
 }))
 export default class TrajectoryCytoscape extends React.PureComponent {
   render() {
@@ -26,8 +26,8 @@ export default class TrajectoryCytoscape extends React.PureComponent {
       trajectoryChoice,
       showTrajectory,
       trajectoryType,
-      milestoneNodeSize,
-      milestoneEdgeWidth,
+      nodeSize,
+      edgeWidth,
     } = this.props;
 
     if (!showTrajectory || !trajectoryChoice.current === "None") return null;
@@ -42,12 +42,23 @@ export default class TrajectoryCytoscape extends React.PureComponent {
           annoMatrix={annoMatrix}
           layoutChoice={layoutChoice}
           trajectoryChoice={trajectoryChoice}
-          milestoneNodeSize={milestoneNodeSize}
-          milestoneEdgeWidth={milestoneEdgeWidth}
+          nodeSize={nodeSize}
+          edgeWidth={edgeWidth}
         />
       );
     } 
-      return <WaypointTrajectory />;
+      return (
+        <WaypointTrajectory
+          width={width}
+          height={height}
+          transformPointForCytoscape={transformPointForCytoscape}
+          annoMatrix={annoMatrix}
+          layoutChoice={layoutChoice}
+          trajectoryChoice={trajectoryChoice}
+          nodeSize={nodeSize}
+          edgeWidth={edgeWidth}
+        />
+      );
     
   }
 }
@@ -59,8 +70,8 @@ const MilestoneTrajectory = ({
   annoMatrix,
   layoutChoice,
   trajectoryChoice,
-  milestoneNodeSize,
-  milestoneEdgeWidth,
+  nodeSize,
+  edgeWidth,
 }) => {
   const milestonePositionDf =
     annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
@@ -75,13 +86,13 @@ const MilestoneTrajectory = ({
   const colorDict = Object.fromEntries(
     milestoneIdList.map((key, i) => [key, milestoneColorList[i]])
   );
-  console.log("colorDict:,", colorDict);
+  // console.log("colorDict:,", colorDict);
 
   const nodes = [];
   dfd
     .toJSON(milestonePositionDf.groupby(["milestone_id"]).first())
     .forEach((row) => {
-      const newpoint = transformPointForCytoscape([row.comp_1, row.comp_2]); // 坐标转化
+      const newPoint = transformPointForCytoscape([row.comp_1, row.comp_2]); // 坐标转化
       nodes.push({
         data: {
           id: row.milestone_id,
@@ -89,8 +100,8 @@ const MilestoneTrajectory = ({
           color: colorDict[row.milestone_id],
         },
         position: {
-          x: Math.floor(newpoint[0]),
-          y: Math.floor(newpoint[1]),
+          x: Math.floor(newPoint[0]),
+          y: Math.floor(newPoint[1]),
         },
       });
     });
@@ -124,14 +135,14 @@ const MilestoneTrajectory = ({
               "background-color": "data(color)",
               "text-valign": "center",
               "text-halign": "center",
-              width: 10 * milestoneNodeSize,
-              height: 10 * milestoneNodeSize,
+              width: 10 * nodeSize,
+              height: 10 * nodeSize,
             },
           },
           {
             selector: "edge",
             style: {
-              width: milestoneEdgeWidth,
+              width: edgeWidth,
               "line-color": "#ccc",
               "target-arrow-color": "#ccc",
               "target-arrow-shape": "triangle",
@@ -144,4 +155,112 @@ const MilestoneTrajectory = ({
   );
 };
 
-const WaypointTrajectory = () => <div>WaypointTrajectory</div>;
+const WaypointTrajectory = ({
+  width,
+  height,
+  transformPointForCytoscape,
+  annoMatrix,
+  layoutChoice,
+  trajectoryChoice,
+  nodeSize,
+  edgeWidth,
+}) => {
+  const milestonePositionDf =
+    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      .trajectory_embedding[layoutChoice.current].milestone_positions;
+  const wpSegmentDf =
+    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      .trajectory_embedding[layoutChoice.current].wp_segments;
+
+  const markerScale = 0.8;
+  const trajectorySVGs = [
+    // 定义轨迹线上的箭头（可复用）
+    <defs key="defs-marker">
+      <marker
+        id="arrowhead"
+        markerWidth={6 * markerScale}
+        markerHeight={4 * markerScale}
+        refX={6 * markerScale}
+        refY={2 * markerScale}
+        orient="auto"
+      >
+        {/*  箭头形状（三角形路径） */}
+        <path
+          d={`M0,0 L${6 * markerScale},${2 * markerScale} L0,${
+            4 * markerScale
+          } Z`}
+          fill="#333"
+        />
+      </marker>
+      这里的箭头小一点
+    </defs>,
+  ];
+  // 先添加里程碑
+  dfd
+    .toJSON(milestonePositionDf.groupby(["milestone_id"]).first())
+    .forEach((row) => {
+      const newPoint = transformPointForCytoscape([row.comp_1, row.comp_2]); // 坐标转化
+      trajectorySVGs.push(
+        <circle
+          cx={newPoint[0]}
+          cy={newPoint[1]}
+          r={nodeSize}
+          style={{ fill: "black" }}
+          key={row.milestone_id}
+        />
+      );
+    });
+
+  // 在添加轨迹线
+  wpSegmentDf.groupby(["group"]).apply((groupDf) => {
+    // 后端已经排好序了，group内percentage从高到低
+    const groupPaths = [];
+    dfd.toJSON(groupDf).forEach((row) => {
+      const newPoint = transformPointForCytoscape([row.comp_1, row.comp_2]);
+      // // 符合polyline多边形的路径
+      // groupPaths.push(newPoint[0]);
+      // groupPaths.push(newPoint[1]);
+      // 符合path路径
+      groupPaths.push(`${newPoint[0]} ${newPoint[1]}`);
+    });
+
+    trajectorySVGs.push(
+      // <polyline
+      //   points={groupPaths.join(", ")}
+      //   fill="none"
+      //   strokeWidth={edgeWidth}
+      //   stroke="black"
+      //   key={groupDf.group.values[0]}
+      // />
+      <path
+        d={`M ${groupPaths.join(" L ")}`}
+        fill="none"
+        strokeWidth={edgeWidth}
+        stroke="black"
+        key={groupDf.group.values[0]}
+      />
+    );
+    // arrow
+    const arrowStartIndex = Math.floor(groupPaths.length / 2);
+    const arrowEndIndex = arrowStartIndex + 1;
+    // console.log(arrowStartIndex, arrowEndIndex);
+    trajectorySVGs.push(
+      <path
+        d={`M ${groupPaths[arrowStartIndex]} L ${groupPaths[arrowEndIndex]}}`}
+        fill="none"
+        strokeWidth={edgeWidth}
+        stroke="black"
+        key={`${groupDf.group.values[0]}-arrow`}
+        markerEnd="url(#arrowhead)"
+      />
+    );
+    return groupDf;
+  });
+
+  return (
+    <svg style={{ width, height }}>
+      <div>WaypointTrajectory</div>
+      {trajectorySVGs}
+    </svg>
+  );
+};

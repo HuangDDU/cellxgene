@@ -79,18 +79,23 @@ function createModelTF() {
   return m;
 }
 
-@connect((state) => ({
-  annoMatrix: state.annoMatrix,
-  crossfilter: state.obsCrossfilter,
-  selectionTool: state.graphSelection.tool,
-  currentSelection: state.graphSelection.selection,
-  layoutChoice: state.layoutChoice,
-  graphInteractionMode: state.controls.graphInteractionMode,
-  colors: state.colors,
-  pointDilation: state.pointDilation,
-  genesets: state.genesets.genesets,
-  anchorTrajectory: state.trajectory.anchorTrajectory,
-}))
+@connect(
+  (state) => ({
+    annoMatrix: state.annoMatrix,
+    crossfilter: state.obsCrossfilter,
+    selectionTool: state.graphSelection.tool,
+    currentSelection: state.graphSelection.selection,
+    layoutChoice: state.layoutChoice,
+    graphInteractionMode: state.controls.graphInteractionMode,
+    colors: state.colors,
+    pointDilation: state.pointDilation,
+    genesets: state.genesets.genesets,
+    anchorTrajectory: state.trajectory.anchorTrajectory,
+  }),
+  null, // mapDispatchToProps
+  null, // mergeProps
+  { forwardRef: true } // activate ref for save
+)
 class Graph extends React.Component {
   static createReglState(canvas) {
     /*

@@ -58,7 +58,7 @@ export default class Preview extends React.Component {
     const colorDict = Object.fromEntries(
       milestoneIdList.map((key, i) => [key, milestoneColorList[i]])
     );
-    console.log("colorDict:,", colorDict);
+    // console.log("colorDict:,", colorDict);
 
     // milestonePositionDf.print();
     const nodes = [];
@@ -86,8 +86,8 @@ export default class Preview extends React.Component {
           },
         });
       });
-    console.log("nodes", nodes);
-    console.log("edges", edges);
+    // console.log("nodes", nodes);
+    // console.log("edges", edges);
     const elements = CytoscapeComponent.normalizeElements({ nodes, edges });
     const { renderKey } = this.state;
 

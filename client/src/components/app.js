@@ -24,6 +24,12 @@ import actions from "../actions";
 }))
 // 页面主组件
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+    // 用于后续保存Graph组件
+    this.graphRef = React.createRef();
+  }
+
   componentDidMount() {
     const { dispatch } = this.props;
 
@@ -80,7 +86,7 @@ class App extends React.Component {
               // 空白标签用于包裹下面的组件，下面的组件仍然是子组件
               <>
                 {/* 菜单栏，多个按钮包括了差异表达、选择、前后跳转等功能 */}
-                <MenuBar />
+                <MenuBar graphRef={this.graphRef} />
                 {/* 降维选择按钮 */}
                 <Embedding />
                 {/* 自动保存状态组件 */}
@@ -88,7 +94,11 @@ class App extends React.Component {
                 {/* 图例组件，当着色模式为连续值时才显示 */}
                 <Legend viewportRef={viewportRef} />
                 {/* TODO: 主面板绘制的降维图+轨迹绘制的区域 */}
-                <Graph key={graphRenderCounter} viewportRef={viewportRef} />
+                <Graph
+                  key={graphRenderCounter}
+                  viewportRef={viewportRef}
+                  ref={this.graphRef}
+                />
               </>
             )}
             <RightSideBar />

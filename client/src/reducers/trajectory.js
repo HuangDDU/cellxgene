@@ -2,8 +2,8 @@ const initialState = {
   showTrajectory: false,
   anchorTrajectory: false,
   trajectoryType: "milestone",
-  milestoneNodeSize: 2.5,
-  milestoneEdgeWidth: 1,
+  nodeSize: 2.5,
+  edgeWidth: 1,
 };
 
 // 参考centroidLabels
@@ -33,21 +33,19 @@ const trajectory = (state = initialState, action) => {
       };
     }
 
-    case "trajectory: set milestone node size": {
-      const milestoneNodeSize =
-        action.milestoneNodeSize ?? state.milestoneNodeSize;
+    case "trajectory: set node size": {
+      const nodeSize = action.nodeSize ?? state.nodeSize;
       return {
         ...state,
-        milestoneNodeSize,
+        nodeSize,
       };
     }
 
-    case "trajectory: set milestone edge width": {
-      const milestoneEdgeWidth =
-        action.milestoneEdgeWidth ?? state.milestoneEdgeWidth;
+    case "trajectory: set edge width": {
+      const edgeWidth = action.edgeWidth ?? state.edgeWidth;
       return {
         ...state,
-        milestoneEdgeWidth,
+        edgeWidth,
       };
     }
 

@@ -7,8 +7,8 @@ import { IconNames } from "@blueprintjs/icons";
   showTrajectory: state.trajectory.showTrajectory,
   anchorTrajectory: state.trajectory.anchorTrajectory,
   trajectoryType: state.trajectory.trajectoryType,
-  milestoneNodeSize: state.trajectory.milestoneNodeSize,
-  milestoneEdgeWidth: state.trajectory.milestoneEdgeWidth,
+  nodeSize: state.trajectory.nodeSize,
+  edgeWidth: state.trajectory.edgeWidth,
   trajectoryChoice: state.trajectoryChoice,
 }))
 export default class Choice extends React.PureComponent {
@@ -16,18 +16,24 @@ export default class Choice extends React.PureComponent {
     super(props);
     this.state = {
       isExpanded: true,
-      isMethodExpanded: true,
+      isMethodExpanded: false,
+      isPlotExpanded: false,
     };
   }
 
   handleExpand = () => {
-    const isExpanded = this.state;
+    const { isExpanded } = this.state;
     this.setState({ isExpanded: !isExpanded });
   };
 
   handleMethodExpand = () => {
-    const {isMethodExpanded} = this.state;
+    const { isMethodExpanded } = this.state;
     this.setState({ isMethodExpanded: !isMethodExpanded });
+  };
+
+  handlePlotExpand = () => {
+    const { isPlotExpanded } = this.state;
+    this.setState({ isPlotExpanded: !isPlotExpanded });
   };
 
   handleIfShowTrajectory = () => {
@@ -63,31 +69,31 @@ export default class Choice extends React.PureComponent {
     });
   };
 
-  setMilestoneNodeSize = (milestoneNodeSize) => {
+  setMilestoneNodeSize = (nodeSize) => {
     const { dispatch } = this.props;
     dispatch({
-      type: "trajectory: set milestone node size",
-      milestoneNodeSize,
+      type: "trajectory: set node size",
+      nodeSize,
     });
   };
 
-  setMilestoneEdgeWidth = (milestoneEdgeWidth) => {
+  setMilestoneEdgeWidth = (edgeWidth) => {
     const { dispatch } = this.props;
     dispatch({
-      type: "trajectory: set milestone edge width",
-      milestoneEdgeWidth,
+      type: "trajectory: set edge width",
+      edgeWidth,
     });
   };
 
   render() {
-    const { isExpanded, isMethodExpanded } = this.state;
+    const { isExpanded, isMethodExpanded, isPlotExpanded } = this.state;
     const {
       showTrajectory,
       anchorTrajectory,
       trajectoryType,
       trajectoryChoice,
-      milestoneNodeSize,
-      milestoneEdgeWidth,
+      nodeSize,
+      edgeWidth,
     } = this.props;
     // const methodList = trajectoryChoice?.available || [];
     return (
@@ -192,45 +198,62 @@ export default class Choice extends React.PureComponent {
                 />
               </RadioGroup>
             </div>
-
-            {/* Node size slider */}
             <div
-              style={{
-                display: "flex",
-                alignItems: "top",
-                gap: "20px",
-                whiteSpace: "nowrap",
-              }}
+              role="menuitem"
+              tabIndex="0"
+              onKeyPress={this.handlePlotExpand}
+              style={{ cursor: "pointer" }}
+              onClick={this.handlePlotExpand}
             >
-              Milestone node size:
-              <Slider
-                labelStepSize={10}
-                max={10}
-                min={0}
-                stepSize={0.1}
-                onChange={this.setMilestoneNodeSize}
-                value={milestoneNodeSize}
-              />
+              Trajectory Plot:
+              {isPlotExpanded ? (
+                <Icon icon={IconNames.CHEVRON_DOWN} />
+              ) : (
+                <Icon icon={IconNames.CHEVRON_RIGHT} />
+              )}
             </div>
-            {/* Edge width slider */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "top",
-                gap: "20px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Milestone dge width:
-              <Slider
-                labelStepSize={10}
-                max={10}
-                min={0}
-                stepSize={0.1}
-                onChange={this.setMilestoneEdgeWidth}
-                value={milestoneEdgeWidth}
-              />
-            </div>
+            {isPlotExpanded && (
+              <div>
+                {/* Node size slider */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "top",
+                    gap: "20px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Milestone node size:
+                  <Slider
+                    labelStepSize={10}
+                    max={10}
+                    min={0}
+                    stepSize={0.1}
+                    onChange={this.setMilestoneNodeSize}
+                    value={nodeSize}
+                  />
+                </div>
+                {/* Edge width slider */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "top",
+                    gap: "20px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Milestone dge width:
+                  <Slider
+                    labelStepSize={10}
+                    max={10}
+                    min={0}
+                    stepSize={0.1}
+                    onChange={this.setMilestoneEdgeWidth}
+                    value={edgeWidth}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
