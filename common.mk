@@ -18,14 +18,19 @@ endif
 # endef
 
 # # cfe dataset
-# define env_or_else_default
-# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
-# endef
+define env_or_else_default
+$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
+endef
 
 # pancrease dataset
-define env_or_else_default
-$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.pancreas_fadata_500.json"))
-endef
+# define env_or_else_default
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.pancreas_fadata_500.json"))
+# endef
+
+# # pancrease dataset
+# define env_or_else_default
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.tmp.json"))
+# endef
 
 # if not a full path, create a full path relative to the project root
 define full_path
