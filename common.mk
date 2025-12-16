@@ -12,24 +12,24 @@ endif
 # $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.default.json"))
 # endef
 
-# # New Anndata dataset
+# New Anndata dataset
 # define env_or_else_default
 # $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating.json"))
 # endef
 
-# # cfe dataset
+# cfe dataset
+# define env_or_else_default
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
+# endef
+
+# pancrease 500 dataset
 define env_or_else_default
-$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
+$(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.pancreas_fadata_500.json"))
 endef
 
 # pancrease dataset
 # define env_or_else_default
-# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.pancreas_fadata_500.json"))
-# endef
-
-# # pancrease dataset
-# define env_or_else_default
-# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.tmp.json"))
+# $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.pancreas_fadata.json"))
 # endef
 
 # if not a full path, create a full path relative to the project root

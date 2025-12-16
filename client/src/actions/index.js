@@ -91,16 +91,16 @@ function prefetchEmbeddings(annoMatrix) {
   available.forEach((embName) => annoMatrix.prefetch("emb", embName));
 }
 
-function prefetchTrajectory(annoMatrix) {
-  /*
-  prefetch annoMatrix for all trajectory
-  */
-  const { schema } = annoMatrix;
-  const available = schema.trajectory.obs.map((v) => v.name);
-  available.forEach((trajectoryName) =>
-    annoMatrix.prefetch("trajectory", trajectoryName)
-  );
-}
+// function prefetchTrajectory(annoMatrix) {
+//   /*
+//   prefetch annoMatrix for all trajectory
+//   */
+//   const { schema } = annoMatrix;
+//   const available = schema.trajectory.obs.map((v) => v.name);
+//   available.forEach((trajectoryName) =>
+//     annoMatrix.prefetch("trajectory", trajectoryName)
+//   );
+// }
 
 /*
 Application bootstrap
@@ -127,7 +127,7 @@ const doInitialDataLoad = () =>
       const annoMatrix = new AnnoMatrixLoader(baseDataUrl, schema.schema);
       const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
       prefetchEmbeddings(annoMatrix); // 预加载降维
-      prefetchTrajectory(annoMatrix); // 预加载轨迹
+      // prefetchTrajectory(annoMatrix); // 预加载轨迹
       annoMatrix.uns = await unsFetch(dispatch); // 加载全部无结构的数据
       // TODO: 后续的uns按需加载，像_cache中数据一样加载需要的列，这里加载需要的键值对
 

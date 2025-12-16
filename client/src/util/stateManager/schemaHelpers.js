@@ -31,12 +31,12 @@ export function indexEntireSchema(schema) {
     schema.layout?.var?.map((v) => [v.name, v]) ?? []
   );
   // 补充trajectory字段的注册
-  schema.trajectory.obsByName = fromEntries(
-    schema.trajectory.obs?.map((v) => [v.name, v]) ?? []
-  );
-  schema.trajectory.varByName = fromEntries(
-    schema.trajectory.var?.map((v) => [v.name, v]) ?? []
-  );
+  // schema.trajectory.obsByName = fromEntries(
+  //   schema.trajectory.obs?.map((v) => [v.name, v]) ?? []
+  // );
+  // schema.trajectory.varByName = fromEntries(
+  //   schema.trajectory.var?.map((v) => [v.name, v]) ?? []
+  // );
 
   return schema;
 }

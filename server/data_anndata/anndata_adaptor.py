@@ -257,9 +257,9 @@ class AnndataAdaptor(DataAdaptor):
         self.gene_count = self.data.shape[1]
         self._create_schema()
 
-        print("_create_schema result")
-        import pprint
-        pprint.pprint(self.schema)
+        # print("_create_schema result")
+        # import pprint
+        # pprint.pprint(self.schema)
 
         if self.dataset_config.X_approximate_distribution == "auto":
             """Lazy evaluate the heuristic if we are backed."""
