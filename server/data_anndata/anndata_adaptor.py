@@ -183,7 +183,10 @@ class AnndataAdaptor(DataAdaptor):
                 return JSONEncoder.default(self, obj)
 
         uns = copy.deepcopy(self.data.uns) # 不影响adata中本身的结果
-        trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  # uns只保存轨迹结果
+        if "cafe" in uns:
+            trajectory_history_dict = uns["cafe"]["trajectory_history_dict"]
+        else:
+            trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  # uns只保存轨迹结果
 
         # scale wp_segments and milestone_positions with cell embedding parameters
         for tk in trajectory_history_dict.keys():
@@ -391,7 +394,10 @@ class AnndataAdaptor(DataAdaptor):
         return ["ref"]
 
     def get_trajectory_embedding_array(self, tname, ename):
-        trajectory_embedding = self.data.uns["cfe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+        if "cafe" in self.data.uns:
+            trajectory_embedding = self.data.uns["cafe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+        else:
+            trajectory_embedding = self.data.uns["cfe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
         milestone_positions = trajectory_embedding["milestone_positions"]
 
         def extract_coords(group_item):

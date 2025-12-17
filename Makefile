@@ -24,7 +24,6 @@ clean-client:
 clean-server:
 	cd server && $(MAKE) clean
 
-
 # BUILDING PACKAGE
 
 .PHONY: build-client
@@ -218,3 +217,25 @@ install-dist: uninstall
 uninstall:
 	pip uninstall -y cellxgene || :
 
+# start client and server for development
+.PHONY: start-dev
+start-dev:
+	@echo "Starting backend (port $(CXG_SERVER_PORT)) and frontend (port $(CXG_CLIENT_PORT))..."
+	@trap 'kill 0' SIGINT; \
+	$(MAKE) start-server & \
+	cd client && $(MAKE) start-frontend & \
+	wait
+
+# clean up processes running on server and client ports
+.PHONY: clean-port
+clean-port: clean-server-port clean-client-port
+
+.PHONY: clean-server-port
+clean-server-port:
+	@echo "Killing process on port $(CXG_SERVER_PORT)..."
+	-lsof -ti:$(CXG_SERVER_PORT) | xargs -r kill -9
+
+.PHONY: clean-client-port
+clean-client-port:
+	@echo "Killing process on port $(CXG_CLIENT_PORT)..."
+	-lsof -ti:$(CXG_CLIENT_PORT) | xargs -r kill -9
