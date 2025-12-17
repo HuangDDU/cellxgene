@@ -44,6 +44,6 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    entry_points={"console_scripts": ["cellxgene = server.cli.cli:cli"]},
+    entry_points={"console_scripts": ["cellxgene = server.cli.cli:cli"]}, # keep use 'cellxgene' in cmd
     extras_require=dict(prepare=requirements_prepare, annotate=requirements_annotate),
 )
