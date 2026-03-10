@@ -135,7 +135,7 @@ class AnndataAdaptor(DataAdaptor):
                 "var": {"index": self.parameters.get("var_names"), "columns": []},
             },
             "layout": {"obs": []},
-            "trajectory": {"obs": []},  # 补充trajectory字段的注册, 后续添加
+            # "trajectory": {"obs": []},  # TODO: deprecated trajectory field.
         }
         for ax in Axis:
             curr_axis = getattr(self.data, str(ax))
@@ -147,18 +147,16 @@ class AnndataAdaptor(DataAdaptor):
         for layout in self.get_embedding_names():
             layout_schema = {"name": layout, "type": "float32", "dims": [f"{layout}_0", f"{layout}_1"]}
             self.schema["layout"]["obs"].append(layout_schema)
-            # 补充trajectory字段的注册
-            # TODO: milestone_positions和wp_segments添加
-
-            for trajectory in self.get_trajectory_names():
-                trajectory_layout = f"{trajectory}@@@{layout}"  # 使用@@@连接轨迹和布局
-                trajectory_schema = {
-                    "name": trajectory_layout,
-                    "type": "float32",
-                    "dims": [f"from_{trajectory_layout}_0", f"from_{trajectory_layout}_1",
-                             f"to_{trajectory_layout}_0", f"to_{trajectory_layout}_1"],
-                }
-                self.schema["trajectory"]["obs"].append(trajectory_schema)
+            # TODO: deprecated trajectory field.
+            # for trajectory in self.get_trajectory_names():
+            #     trajectory_layout = f"{trajectory}@@@{layout}"  # 使用@@@连接轨迹和布局
+            #     trajectory_schema = {
+            #         "name": trajectory_layout,
+            #         "type": "float32",
+            #         "dims": [f"from_{trajectory_layout}_0", f"from_{trajectory_layout}_1",
+            #                  f"to_{trajectory_layout}_0", f"to_{trajectory_layout}_1"],
+            #     }
+            #     self.schema["trajectory"]["obs"].append(trajectory_schema)
 
     def get_schema(self):
         return self.schema
@@ -183,10 +181,12 @@ class AnndataAdaptor(DataAdaptor):
                 return JSONEncoder.default(self, obj)
 
         uns = copy.deepcopy(self.data.uns) # 不影响adata中本身的结果
+        # uns只保存轨迹结果
         if "cafe" in uns:
             trajectory_history_dict = uns["cafe"]["trajectory_history_dict"]
         else:
-            trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  # uns只保存轨迹结果
+            # older version for cafe
+            trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  
 
         # scale wp_segments and milestone_positions with cell embedding parameters
         for tk in trajectory_history_dict.keys():
@@ -206,7 +206,7 @@ class AnndataAdaptor(DataAdaptor):
             # update
             trajectory_history_dict[tk]["trajectory_embedding"] = te
 
-        uns = {"cfe": {"trajectory_history_dict": trajectory_history_dict}}
+        uns = {"cafe": {"trajectory_history_dict": trajectory_history_dict}}
         return json.dumps(uns, cls=CustomJSONEncoder, indent=2)
 
     def _load_data(self, data_locator):
@@ -390,14 +390,14 @@ class AnndataAdaptor(DataAdaptor):
         return full_embedding[:, 0:dims]
 
     def get_trajectory_names(self):
-        # return self.data.uns["cfe"]["trajectory_history_dict"].keys() # TODO: 获取所有轨迹的名称, 加入会导致维度不一样
+        # return self.data.uns["cafe"]["trajectory_history_dict"].keys() # TODO: 获取所有轨迹的名称, 加入会导致维度不一样
         return ["ref"]
 
     def get_trajectory_embedding_array(self, tname, ename):
         if "cafe" in self.data.uns:
             trajectory_embedding = self.data.uns["cafe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
         else:
-            trajectory_embedding = self.data.uns["cfe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+            trajectory_embedding = self.data.uns["cafe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
         milestone_positions = trajectory_embedding["milestone_positions"]
 
         def extract_coords(group_item):

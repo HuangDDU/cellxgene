@@ -4,7 +4,7 @@ function bestDefaultTrajectory(trajectory) {
 }
 
 function setToDefaultTrajectory(annoMatrix) {
-  const available = Object.keys(annoMatrix.uns.cfe.trajectory_history_dict);
+  const available = Object.keys(annoMatrix.uns.cafe.trajectory_history_dict);
   const current = bestDefaultTrajectory(available);
   return { available, current };
 }

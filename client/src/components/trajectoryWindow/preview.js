@@ -47,13 +47,13 @@ export default class Preview extends React.Component {
 
     // 从uns中读取danfo dataframe
     const milestonePositionDf =
-      annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
         .trajectory_embedding[layoutChoice.current].milestone_positions;
     const milestoneIdList =
-      annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
         .milestone_wrapper.id_list;
     const milestoneColorList =
-      annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
         .milestone_wrapper.color_list;
     const colorDict = Object.fromEntries(
       milestoneIdList.map((key, i) => [key, milestoneColorList[i]])

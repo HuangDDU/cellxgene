@@ -17,7 +17,7 @@ endif
 # $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating.json"))
 # endef
 
-# cfe dataset
+# cafe dataset
 # define env_or_else_default
 # $(if $($(1)),$($(1)),$(shell jq -r '.$(1)' "$(PROJECT_ROOT)/environment.bifurcating_fadata.json"))
 # endef

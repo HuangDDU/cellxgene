@@ -107,19 +107,20 @@ export default class AnnoMatrix {
       var: Dataframe.empty(this.rowIndex),
       emb: Dataframe.empty(this.rowIndex),
       X: Dataframe.empty(this.rowIndex),
-      trajectory: Dataframe.empty(this.rowIndex),
+      // trajectory: Dataframe.empty(this.rowIndex), # TODO: remove trajectory, should in uns
     };
     this._pendingLoad = {
       obs: {},
       var: {},
       emb: {},
       X: {},
-      trajectory: {},
+      // trajectory: {}, # TODO: remove trajectory, should in uns
     };
     this._whereCache = {};
     this._gcInfo = new Map();
 
-    this.uns = {}; // uns结构的注册在action/index.js里
+    // TOOD: lazy load unstructed data.
+    this.uns = {}; // uns结构的注册在action/index.js里,
   }
 
   /**

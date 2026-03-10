@@ -24,7 +24,7 @@ export default class Trajectory extends React.PureComponent {
     // TODO:  从uns中提取Milestone，Waypoint等DataFrame数据用作后续绘制
     // 从uns中读取danfo dataframe
     const milestonePositionDf =
-      annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+      annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
         .trajectory_embedding[layoutChoice.current].milestone_positions;
     // milestonePositionDf.setIndex({ column: "waypoint_id", inplace: true });
     // console.log("milestonePositionDf.shape: ", milestonePositionDf.shape);

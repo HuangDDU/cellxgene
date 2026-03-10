@@ -46,20 +46,19 @@ export default class TrajectoryCytoscape extends React.PureComponent {
           edgeWidth={edgeWidth}
         />
       );
-    } 
-      return (
-        <WaypointTrajectory
-          width={width}
-          height={height}
-          transformPointForCytoscape={transformPointForCytoscape}
-          annoMatrix={annoMatrix}
-          layoutChoice={layoutChoice}
-          trajectoryChoice={trajectoryChoice}
-          nodeSize={nodeSize}
-          edgeWidth={edgeWidth}
-        />
-      );
-    
+    }
+    return (
+      <WaypointTrajectory
+        width={width}
+        height={height}
+        transformPointForCytoscape={transformPointForCytoscape}
+        annoMatrix={annoMatrix}
+        layoutChoice={layoutChoice}
+        trajectoryChoice={trajectoryChoice}
+        nodeSize={nodeSize}
+        edgeWidth={edgeWidth}
+      />
+    );
   }
 }
 
@@ -74,14 +73,14 @@ const MilestoneTrajectory = ({
   edgeWidth,
 }) => {
   const milestonePositionDf =
-    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+    annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
       .trajectory_embedding[layoutChoice.current].milestone_positions;
   // milestonePositionDf.print();
   const milestoneIdList =
-    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+    annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
       .milestone_wrapper.id_list;
   const milestoneColorList =
-    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+    annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
       .milestone_wrapper.color_list;
   const colorDict = Object.fromEntries(
     milestoneIdList.map((key, i) => [key, milestoneColorList[i]])
@@ -166,10 +165,10 @@ const WaypointTrajectory = ({
   edgeWidth,
 }) => {
   const milestonePositionDf =
-    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+    annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
       .trajectory_embedding[layoutChoice.current].milestone_positions;
   const wpSegmentDf =
-    annoMatrix.uns.cfe.trajectory_history_dict[trajectoryChoice.current]
+    annoMatrix.uns.cafe.trajectory_history_dict[trajectoryChoice.current]
       .trajectory_embedding[layoutChoice.current].wp_segments;
 
   const markerScale = 0.8;

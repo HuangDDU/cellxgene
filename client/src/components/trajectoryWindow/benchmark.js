@@ -29,11 +29,11 @@ export default class Benchmark extends React.PureComponent {
     // read benchmark metrics
     const benchmark = [];
     console.log(
-      "annoMatrix.uns.cfe.trajectory_history_dict",
-      annoMatrix.uns.cfe.trajectory_history_dict
+      "annoMatrix.uns.cafe.trajectory_history_dict",
+      annoMatrix.uns.cafe.trajectory_history_dict
     );
     for (const [trajectoryName, trajectory] of Object.entries(
-      annoMatrix.uns.cfe.trajectory_history_dict
+      annoMatrix.uns.cafe.trajectory_history_dict
     )) {
       benchmark.push({
         id: trajectoryName,

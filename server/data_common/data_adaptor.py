@@ -426,29 +426,29 @@ class DataAdaptor(metaclass=ABCMeta):
             fbs = encode_matrix_fbs(df, col_idx=df.columns, row_idx=None)  # fbs压缩编码
         return fbs
 
-    def trajectory_to_fbs_matrix(self, fields):
-        # print("trajectory_to_fbs_matrix fields", fields)
-        tm = fields[0].split("@@@")[0]  # trajectory_method
-        fields = [field.split("@@@")[-1] for field in fields]
-        # 从FateAnnData提取轨迹
-        embeddings = self.get_embedding_names() if fields is None or len(fields) == 0 else fields
-        # layout_data = []
-        trajectory_data = []
-        with ServerTiming.time("trajectory.query"):
-            for ename in embeddings:
-                embedding = self.get_embedding_array(ename, 2)  # 先提取降维
-                # normalized_layout = DataAdaptor.normalize_embedding(embedding)  # 对降维结果进行归一化
-                # layout_data.append(pd.DataFrame(normalized_layout, columns=[f"{ename}_0", f"{ename}_1"]))
+    # def trajectory_to_fbs_matrix(self, fields):
+    #     # print("trajectory_to_fbs_matrix fields", fields)
+    #     tm = fields[0].split("@@@")[0]  # trajectory_method
+    #     fields = [field.split("@@@")[-1] for field in fields]
+    #     # 从FateAnnData提取轨迹
+    #     embeddings = self.get_embedding_names() if fields is None or len(fields) == 0 else fields
+    #     # layout_data = []
+    #     trajectory_data = []
+    #     with ServerTiming.time("trajectory.query"):
+    #         for ename in embeddings:
+    #             embedding = self.get_embedding_array(ename, 2)  # 先提取降维
+    #             # normalized_layout = DataAdaptor.normalize_embedding(embedding)  # 对降维结果进行归一化
+    #             # layout_data.append(pd.DataFrame(normalized_layout, columns=[f"{ename}_0", f"{ename}_1"]))
 
-                trajectory_embedding_array = self.get_trajectory_embedding_array(
-                    tm, ename)  # 再提取轨迹坐标 # TODO: 暂时只是ref轨迹，后续添加其他轨迹
-                normalized_trajectory = DataAdaptor.normalize_trajectory_embedding(
-                    trajectory_embedding_array, embedding)
-                s = normalized_trajectory.shape  # (n_segement, 2, 2)
-                normalized_trajectory = normalized_trajectory.reshape(s[0], s[1] * s[2])  # (n_segement, 4)
-                # print(normalized_trajectory)
-                trajectory_data.append(pd.DataFrame(normalized_trajectory,
-                                                    columns=[f"from_{tm}@@@{ename}_0", f"from_{tm}@@@{ename}_1", f"to_{tm}@@@{ename}_0", f"to_{tm}@@@{ename}_1"]))
+    #             trajectory_embedding_array = self.get_trajectory_embedding_array(
+    #                 tm, ename)  # 再提取轨迹坐标 # TODO: 暂时只是ref轨迹，后续添加其他轨迹
+    #             normalized_trajectory = DataAdaptor.normalize_trajectory_embedding(
+    #                 trajectory_embedding_array, embedding)
+    #             s = normalized_trajectory.shape  # (n_segement, 2, 2)
+    #             normalized_trajectory = normalized_trajectory.reshape(s[0], s[1] * s[2])  # (n_segement, 4)
+    #             # print(normalized_trajectory)
+    #             trajectory_data.append(pd.DataFrame(normalized_trajectory,
+    #                                                 columns=[f"from_{tm}@@@{ename}_0", f"from_{tm}@@@{ename}_1", f"to_{tm}@@@{ename}_0", f"to_{tm}@@@{ename}_1"]))
 
         with ServerTiming.time("trajectory.encode"):
             if trajectory_data:

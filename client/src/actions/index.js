@@ -129,7 +129,7 @@ const doInitialDataLoad = () =>
       prefetchEmbeddings(annoMatrix); // 预加载降维
       // prefetchTrajectory(annoMatrix); // 预加载轨迹
       annoMatrix.uns = await unsFetch(dispatch); // 加载全部无结构的数据
-      // TODO: 后续的uns按需加载，像_cache中数据一样加载需要的列，这里加载需要的键值对
+      // TODO: 后续的uns按需加载，像_cache中数据一样加载需要的列，这里加载需要的键值对(lazy load unstructed data)，而不是一次性加载全部uns数据
 
       dispatch({
         type: "annoMatrix: init complete",

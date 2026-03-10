@@ -2,7 +2,7 @@ import { smartConvertToDataframe } from "../../../src/util/stateManager/unsHelpe
 
 describe("uns helpers transfer test", () => {
   const uns = {
-    cfe: {
+    cafe: {
       model_name: {},
       prior_information: {},
       trajectory_history_dict: {
@@ -55,10 +55,10 @@ describe("uns helpers transfer test", () => {
       },
     },
   };
-  test("cfe transfer without danfo", () => {
+  test("cafe transfer without danfo", () => {
     const convertedUns = smartConvertToDataframe(uns);
     const df =
-      convertedUns.cfe.trajectory_history_dict.ref.trajectory_embedding.emb
+      convertedUns.cafe.trajectory_history_dict.ref.trajectory_embedding.emb
         .milestone_positions;
     expect(df).toBeDefined();
     expect(df.dims).toEqual([2, 3]);
