@@ -1,4 +1,5 @@
 import { createStore, applyMiddleware } from "redux";
+import { composeWithDevTools } from "redux-devtools-extension";
 import thunk from "redux-thunk";
 
 import cascadeReducers from "./cascade";
@@ -20,6 +21,8 @@ import autosave from "./autosave";
 import centroidLabels from "./centroidLabels";
 import pointDialation from "./pointDilation";
 import { gcMiddleware as annoMatrixGC } from "../annoMatrix";
+import trajectory from "./trajectory";
+import trajectoryChoice from "./trajectoryChoice";
 
 import undoableConfig from "./undoableConfig";
 
@@ -41,6 +44,8 @@ const Reducer = undoable(
     ["centroidLabels", centroidLabels],
     ["pointDilation", pointDialation],
     ["autosave", autosave],
+    ["trajectory", trajectory],
+    ["trajectoryChoice", trajectoryChoice],
   ]),
   [
     "annoMatrix",
@@ -55,10 +60,16 @@ const Reducer = undoable(
     "centroidLabels",
     "genesets",
     "annotations",
+    "trajectory",
+    "trajectoryChoice",
   ],
   undoableConfig
 );
 
-const store = createStore(Reducer, applyMiddleware(thunk, annoMatrixGC));
+// 开启Redux开发者工具
+const store = createStore(
+  Reducer,
+  composeWithDevTools(applyMiddleware(thunk, annoMatrixGC))
+);
 
 export default store;

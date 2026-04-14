@@ -135,6 +135,7 @@ class AnndataAdaptor(DataAdaptor):
                 "var": {"index": self.parameters.get("var_names"), "columns": []},
             },
             "layout": {"obs": []},
+            # "trajectory": {"obs": []},  # TODO: deprecated trajectory field.
         }
         for ax in Axis:
             curr_axis = getattr(self.data, str(ax))
@@ -146,9 +147,67 @@ class AnndataAdaptor(DataAdaptor):
         for layout in self.get_embedding_names():
             layout_schema = {"name": layout, "type": "float32", "dims": [f"{layout}_0", f"{layout}_1"]}
             self.schema["layout"]["obs"].append(layout_schema)
+            # TODO: deprecated trajectory field.
+            # for trajectory in self.get_trajectory_names():
+            #     trajectory_layout = f"{trajectory}@@@{layout}"  # 使用@@@连接轨迹和布局
+            #     trajectory_schema = {
+            #         "name": trajectory_layout,
+            #         "type": "float32",
+            #         "dims": [f"from_{trajectory_layout}_0", f"from_{trajectory_layout}_1",
+            #                  f"to_{trajectory_layout}_0", f"to_{trajectory_layout}_1"],
+            #     }
+            #     self.schema["trajectory"]["obs"].append(trajectory_schema)
 
     def get_schema(self):
         return self.schema
+
+    def get_uns(self):
+        import copy
+        import json
+        import numpy as np
+        import pandas as pd
+        from json import JSONEncoder
+
+        class CustomJSONEncoder(JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()  # 将 numpy 数组转为 Python list
+                elif isinstance(obj, pd.DataFrame):
+                    return obj.to_dict(orient="records")  # 将 DataFrame 转为字典列表
+                elif isinstance(obj, (np.int64, np.int32, np.float64, np.float32)):
+                    return int(obj) if isinstance(obj, (np.int64, np.int32)) else float(obj)
+                if isinstance(obj, (np.bool_, bool)):
+                    return bool(obj)
+                return JSONEncoder.default(self, obj)
+
+        uns = copy.deepcopy(self.data.uns) # 不影响adata中本身的结果
+        # uns只保存轨迹结果
+        if "cafe" in uns:
+            trajectory_history_dict = uns["cafe"]["trajectory_history_dict"]
+        else:
+            # older version for cafe
+            trajectory_history_dict = uns["cfe"]["trajectory_history_dict"]  
+
+        # scale wp_segments and milestone_positions with cell embedding parameters
+        for tk in trajectory_history_dict.keys():
+            te = trajectory_history_dict[tk]["trajectory_embedding"]
+            for ename in te.keys():
+                # embedding, waypoint_segments, milestone_positions
+                cell_embedding = self.data.obsm[f"X_{ename}"][:, :2]
+                wp_segments = te[ename]["wp_segments"]
+                milestone_positions = te[ename]["milestone_positions"]
+                # scale
+                wp_segments[["comp_1", "comp_2"]] = DataAdaptor.normalize_trajectory_embedding(wp_segments[["comp_1", "comp_2"]].values, cell_embedding)
+                milestone_positions[["comp_1", "comp_2"]] = DataAdaptor.normalize_trajectory_embedding(milestone_positions[["comp_1", "comp_2"]].values, cell_embedding)
+                # print(tk, ename, "wp_segments", wp_segments)
+                # print(tk, ename, "milestone_positions", milestone_positions)
+                # update
+                te[ename] = {"wp_segments": wp_segments, "milestone_positions": milestone_positions}
+            # update
+            trajectory_history_dict[tk]["trajectory_embedding"] = te
+
+        uns = {"cafe": {"trajectory_history_dict": trajectory_history_dict}}
+        return json.dumps(uns, cls=CustomJSONEncoder, indent=2)
 
     def _load_data(self, data_locator):
         # as of AnnData 0.6.19, backed mode performs initial load fast, but at the
@@ -200,6 +259,10 @@ class AnndataAdaptor(DataAdaptor):
         self.cell_count = self.data.shape[0]
         self.gene_count = self.data.shape[1]
         self._create_schema()
+
+        # print("_create_schema result")
+        # import pprint
+        # pprint.pprint(self.schema)
 
         if self.dataset_config.X_approximate_distribution == "auto":
             """Lazy evaluate the heuristic if we are backed."""
@@ -325,6 +388,28 @@ class AnndataAdaptor(DataAdaptor):
     def get_embedding_array(self, ename, dims=2):
         full_embedding = self.data.obsm[f"X_{ename}"]
         return full_embedding[:, 0:dims]
+
+    def get_trajectory_names(self):
+        # return self.data.uns["cafe"]["trajectory_history_dict"].keys() # TODO: 获取所有轨迹的名称, 加入会导致维度不一样
+        return ["ref"]
+
+    def get_trajectory_embedding_array(self, tname, ename):
+        if "cafe" in self.data.uns:
+            trajectory_embedding = self.data.uns["cafe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+        else:
+            trajectory_embedding = self.data.uns["cafe"]["trajectory_history_dict"][tname]["trajectory_embedding"][ename]
+        milestone_positions = trajectory_embedding["milestone_positions"]
+
+        def extract_coords(group_item):
+            from_row = group_item[group_item["percentage"] == 0].iloc[0]
+            to_row = group_item[group_item["percentage"] == 1].iloc[0]
+            from_coord = from_row[["comp_1", "comp_2"]].astype(float).values
+            to_coord = to_row[["comp_1", "comp_2"]].astype(float).values
+            return [from_coord, to_coord]
+
+        trajectory_embedding_array = milestone_positions.groupby("group").apply(extract_coords).values.tolist()
+        trajectory_embedding_array = np.array(trajectory_embedding_array)
+        return trajectory_embedding_array
 
     def compute_diffexp_ttest(self, maskA, maskB, top_n=None, lfc_cutoff=None):
         if top_n is None:

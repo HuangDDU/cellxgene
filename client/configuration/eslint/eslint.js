@@ -16,6 +16,11 @@ module.exports = {
     // AbortController is not supported in iOS Safari 10.3, Chrome 61
     // Headers is not supported in iOS Safari 10.3
     polyfills: ["Headers", "AbortController"],
+    "import/resolver": {
+      webpack: {
+        config: "configuration/webpack/webpack.config.dev.js",
+      },
+    },
   },
   env: { browser: true, commonjs: true, es6: true },
   globals: {
@@ -30,11 +35,11 @@ module.exports = {
   },
   parser: "@babel/eslint-parser",
   parserOptions: {
-    ecmaVersion: 2017,
+    ecmaVersion: 2020,
     sourceType: "module",
     ecmaFeatures: {
       jsx: true,
-      generators: true,
+      legacyDecorators: true,
     },
     babelOptions: {
       configFile: "./configuration/babel/babel.prod.js",
@@ -92,4 +97,5 @@ module.exports = {
       },
     },
   ],
+  plugins: ["@babel"],
 };

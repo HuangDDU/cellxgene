@@ -21,6 +21,10 @@ import CentroidLabels from "./overlays/centroidLabels";
 import actions from "../../actions";
 import renderThrottle from "../../util/renderThrottle";
 
+// import Trajectory from "./overlays/trajectory";
+// import TrajectorySVG from "./overlays/trajectorySVG";
+import TrajectoryCytoscape from "./overlays/trajectoryCytoscape";
+
 import {
   flagBackground,
   flagSelected,
@@ -37,22 +41,30 @@ Simple 2D transforms control all point painting.  There are three:
 function createProjectionTF(viewportWidth, viewportHeight) {
   /*
   the projection transform accounts for the screen size & other layout
+  投影变换考虑了屏幕尺寸和其他布局（布局边距 gutter）
+  参考（齐次坐标下的放射变换）：https://blog.csdn.net/weixin_46773434/article/details/127417579
   */
-  const fractionToUse = 0.95; // fraction of min dimension to use
-  const topGutterSizePx = 32; // top gutter for tools
-  const bottomGutterSizePx = 32; // bottom gutter for tools
+  const fractionToUse = 0.95; // fraction of min dimension to use // 使用视口最小维度的95%作为绘图区域大小比例
+  const topGutterSizePx = 32; // top gutter for tools // 顶部工具栏预留32像素
+  const bottomGutterSizePx = 32; // bottom gutter for tools // 底部工具栏预留32像素
+  // 计算除去上下边距后的可用高度
   const heightMinusGutter =
     viewportHeight - topGutterSizePx - bottomGutterSizePx;
+  // 取宽度和可用高度中的较小值，保证图形不会超出视口
   const minDim = Math.min(viewportWidth, heightMinusGutter);
+  // 计算宽度和高度方向的缩放比例，使图形按比例缩放到视口的95%
   const aspectScale = [
     (fractionToUse * minDim) / viewportWidth,
     (fractionToUse * minDim) / viewportHeight,
   ];
+  // 创建一个单位矩阵（3x3）
   const m = mat3.create();
+  // 先做一个平移变换，调整y轴方向的位置，使绘图区域居中于上下边距之间
   mat3.fromTranslation(m, [
     0,
     (bottomGutterSizePx - topGutterSizePx) / viewportHeight / aspectScale[1],
   ]);
+  // 再做缩放变换，按计算的比例缩放x和y轴
   mat3.scale(m, m, aspectScale);
   return m;
 }
@@ -67,23 +79,30 @@ function createModelTF() {
   return m;
 }
 
-@connect((state) => ({
-  annoMatrix: state.annoMatrix,
-  crossfilter: state.obsCrossfilter,
-  selectionTool: state.graphSelection.tool,
-  currentSelection: state.graphSelection.selection,
-  layoutChoice: state.layoutChoice,
-  graphInteractionMode: state.controls.graphInteractionMode,
-  colors: state.colors,
-  pointDilation: state.pointDilation,
-  genesets: state.genesets.genesets,
-}))
+@connect(
+  (state) => ({
+    annoMatrix: state.annoMatrix,
+    crossfilter: state.obsCrossfilter,
+    selectionTool: state.graphSelection.tool,
+    currentSelection: state.graphSelection.selection,
+    layoutChoice: state.layoutChoice,
+    graphInteractionMode: state.controls.graphInteractionMode,
+    colors: state.colors,
+    pointDilation: state.pointDilation,
+    genesets: state.genesets.genesets,
+    anchorTrajectory: state.trajectory.anchorTrajectory,
+  }),
+  null, // mapDispatchToProps
+  null, // mergeProps
+  { forwardRef: true } // activate ref for save
+)
 class Graph extends React.Component {
   static createReglState(canvas) {
     /*
     Must be created for each canvas
     */
     // setup canvas, webgl draw function and camera
+    // canvas画布初始化, webgl绘图函数和相机初始化
     const camera = _camera(canvas);
     const regl = _regl(canvas);
     const drawPoints = _drawPoints(regl);
@@ -104,6 +123,7 @@ class Graph extends React.Component {
   }
 
   static watchAsync(props, prevProps) {
+    // 浅比较数据, 发生变换时重新请求, 执行promiseFn.
     return !shallowEqual(props.watchProps, prevProps.watchProps);
   }
 
@@ -211,6 +231,7 @@ class Graph extends React.Component {
   constructor(props) {
     super(props);
     const viewport = this.getViewportDimensions();
+    // console.log("viewport", viewport);
     this.reglCanvas = null;
     this.cachedAsyncProps = null;
     const modelTF = createModelTF();
@@ -229,7 +250,7 @@ class Graph extends React.Component {
       // regl state
       regl: null,
       drawPoints: null,
-      pointBuffer: null,
+      pointBuffer: null, // 核心:细胞坐标
       colorBuffer: null,
       flagBuffer: null,
 
@@ -317,7 +338,10 @@ class Graph extends React.Component {
     if (e.type !== "wheel") e.preventDefault();
     if (camera.handleEvent(e, projectionTF)) {
       this.renderCanvas();
-      this.setState((state) => ({ ...state, updateOverlay: !state.updateOverlay }));
+      this.setState((state) => ({
+        ...state,
+        updateOverlay: !state.updateOverlay,
+      }));
     }
   };
 
@@ -528,9 +552,15 @@ class Graph extends React.Component {
     );
 
     const { currentDimNames } = layoutChoice;
+    // console.log("Graph.fetchAsyncProps layoutDf", layoutDf);
     const X = layoutDf.col(currentDimNames[0]).asArray();
     const Y = layoutDf.col(currentDimNames[1]).asArray();
-    const positions = this.computePointPositions(X, Y, modelTF);
+    // console.log("Graph.fetchAsyncProps pre computePointPositions: X, Y", X, Y);
+    const positions = this.computePointPositions(X, Y, modelTF); // NOTE:关键, 计算点的坐标
+    // console.log(
+    //   "Graph.fetchAsyncProps post computePointPositions: positions",
+    //   positions
+    // );
 
     const colorTable = this.updateColorTable(colorsProp, colorDf);
     const colors = this.computePointColors(colorTable.rgb);
@@ -568,13 +598,17 @@ class Graph extends React.Component {
       - the layout dataframe
       - the point dilation dataframe
     */
+    //  异步请求需要的数据
+    // console.log("Graph.fetchData: fetching data");
     const { metadataField: pointDilationAccessor } = pointDilation;
 
     const promises = [];
     // layout
+    // 布局
     promises.push(annoMatrix.fetch("emb", layoutChoice.current));
 
     // color
+    // 颜色
     const query = this.createColorByQuery(colors);
     if (query) {
       promises.push(annoMatrix.fetch(...query));
@@ -583,12 +617,14 @@ class Graph extends React.Component {
     }
 
     // point highlighting
+    // 需要强调的点坐标
     if (pointDilationAccessor) {
       promises.push(annoMatrix.fetch("obs", pointDilationAccessor));
     } else {
       promises.push(Promise.resolve(null));
     }
 
+    // 所有数据请求完成后执行
     return Promise.all(promises);
   }
 
@@ -713,6 +749,7 @@ class Graph extends React.Component {
   }
 
   renderCanvas = renderThrottle(() => {
+    // 渲染画布, 多加了一层
     const {
       regl,
       drawPoints,
@@ -754,6 +791,7 @@ class Graph extends React.Component {
       flagBuffer({ data: flags, dimension: 1 });
       needToRenderCanvas = true;
     }
+    // 如果有变化，重新渲染Canvas画布
     if (needToRenderCanvas) this.renderCanvas();
   }
 
@@ -832,9 +870,43 @@ class Graph extends React.Component {
       layoutChoice,
       pointDilation,
       crossfilter,
+      anchorTrajectory,
     } = this.props;
     const { modelTF, projectionTF, camera, viewport, regl } = this.state;
     const cameraTF = camera?.view()?.slice();
+
+    const { width, height } = viewport;
+    const transformPointForCytoscape = (point) => {
+      // 1. 应用模型变换 (数据坐标 → WebGL坐标)
+      const webglCoords = vec2.transformMat3(
+        vec2.create(),
+        vec2.fromValues(point[0], point[1]),
+        modelTF
+      );
+
+      // 2. 应用相机变换
+      let cameraCoords;
+      if (cameraTF) {
+        cameraCoords = vec2.transformMat3(webglCoords, webglCoords, cameraTF);
+      } else {
+        // 初始如果没有相机变换，则直接使用WebGL坐标
+        cameraCoords = webglCoords;
+      }
+
+      // 3. 应用投影变换
+      const projectedCoords = vec2.transformMat3(
+        cameraCoords,
+        cameraCoords,
+        projectionTF
+      );
+
+      // 4. 映射到屏幕坐标
+      return [
+        ((projectedCoords[0] + 1) * width) / 2,
+        -((projectedCoords[1] + 1) / 2 - 1) * height,
+      ];
+    };
+    const TrajectoryCytoscapeZIndex = anchorTrajectory ? 2 : 1; // 判断是否使用Cytoscape按钮
 
     return (
       <div
@@ -845,6 +917,19 @@ class Graph extends React.Component {
           left: 0,
         }}
       >
+        {/* 分为多个图层 */}
+        {/* TODO: 使用Cytoscape渲染的轨迹需要在SVG外层绘制，不能在GraphOverlayLayer的g标签内绘制 */}
+        <div
+          style={{ position: "absolute", zIndex: TrajectoryCytoscapeZIndex }}
+        >
+          {/* 默认图层为1，如果要激活 Cytoscape轨迹图层，需要将其zIndex设置为2 */}
+          <TrajectoryCytoscape
+            width={viewport.width}
+            height={viewport.height}
+            transformPointForCytoscape={transformPointForCytoscape} // 用于将点转换为Cytoscape坐标
+          />
+        </div>
+        {/* GraphOverlayLayer层包含了标签、注释、辅助线等，会随着其他按钮的选择进行变化*/}
         <GraphOverlayLayer
           width={viewport.width}
           height={viewport.height}
@@ -855,8 +940,13 @@ class Graph extends React.Component {
             graphInteractionMode === "zoom" ? this.handleCanvasEvent : undefined
           }
         >
+          {/* 轨迹, 像文本标签一样, 点击时显示, 使用Cytoscape代替此处SVG实现*/}
+          {/* <Trajectory/> */}
+          {/* <TrajectorySVG /> */}
+          {/* 聚类中心标签，显示时背景细胞变透明 */}
           <CentroidLabels />
         </GraphOverlayLayer>
+        {/* SVG层， 刷选（brush）和套索（lasso）选择工具的交互图形 */}
         <svg
           id="lasso-layer"
           data-testid="layout-overlay"
@@ -865,12 +955,14 @@ class Graph extends React.Component {
             position: "absolute",
             top: 0,
             left: 0,
-            zIndex: 1,
+            zIndex: 1, //
           }}
           width={viewport.width}
           height={viewport.height}
           pointerEvents={graphInteractionMode === "select" ? "auto" : "none"}
         />
+
+        {/* Canvas，主绘制层，通过Canvas+WebGL实现高性能的数据点渲染, 与后续Async组件共同使用实现数据的加载和渲染 */}
         <canvas
           width={viewport.width}
           height={viewport.height}
@@ -892,9 +984,11 @@ class Graph extends React.Component {
           onWheel={this.handleCanvasEvent}
         />
 
+        {/* 通过Async组件处理异步数据加载和渲染 */}
+        {/* 参考: https://docs.react-async.com/guide/async-components */}
         <Async
-          watchFn={Graph.watchAsync}
-          promiseFn={this.fetchAsyncProps}
+          promiseFn={this.fetchAsyncProps} // 发送请求的函数
+          watchFn={Graph.watchAsync} // 决定何时重新执行 promiseFn
           watchProps={{
             annoMatrix,
             colors,
@@ -902,8 +996,9 @@ class Graph extends React.Component {
             pointDilation,
             crossfilter,
             viewport,
-          }}
+          }} // 可选，请求数据时需要的参数
         >
+          {/* 异步操作进行中时渲染 */}
           <Async.Pending initial>
             <StillLoading
               displayName={layoutChoice.current}
@@ -911,6 +1006,7 @@ class Graph extends React.Component {
               height={viewport.height}
             />
           </Async.Pending>
+          {/* 异步操作失败时渲染 */}
           <Async.Rejected>
             {(error) => (
               <ErrorLoading
@@ -921,6 +1017,7 @@ class Graph extends React.Component {
               />
             )}
           </Async.Rejected>
+          {/* 异步操作成功时渲染(关键核心) */}
           <Async.Fulfilled>
             {(asyncProps) => {
               if (regl && !shallowEqual(asyncProps, this.cachedAsyncProps)) {
@@ -935,7 +1032,9 @@ class Graph extends React.Component {
   }
 }
 
+// 后续两个函数式组件对应加载失败与加载时的异步操作
 const ErrorLoading = ({ displayName, error, width, height }) => {
+  // 加载错误
   console.log(error); // log to console as this is an unepected error
   return (
     <div
@@ -951,32 +1050,30 @@ const ErrorLoading = ({ displayName, error, width, height }) => {
   );
 };
 
-const StillLoading = ({ displayName, width, height }) => 
+const StillLoading = ({ displayName, width, height }) => (
   /*
-  Render a busy/loading indicator
-  */
-   (
+Render a busy/loading indicator
+渲染加载的进度条
+*/
+  <div
+    style={{
+      position: "fixed",
+      fontWeight: 500,
+      top: height / 2,
+      width,
+    }}
+  >
     <div
       style={{
-        position: "fixed",
-        fontWeight: 500,
-        top: height / 2,
-        width,
+        display: "flex",
+        justifyContent: "center",
+        justifyItems: "center",
+        alignItems: "center",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          justifyItems: "center",
-          alignItems: "center",
-        }}
-      >
-        <Button minimal loading intent="primary" />
-        <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
-      </div>
+      <Button minimal loading intent="primary" />
+      <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
     </div>
-  )
-;
-
+  </div>
+);
 export default Graph;

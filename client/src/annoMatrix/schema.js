@@ -3,6 +3,7 @@ Private helper functions related to schema
 */
 export function _getColumnSchema(schema, field, col) {
   /* look up the column definition */
+  // fetch时不同的field返回的字段不同
   switch (field) {
     case "obs":
       if (typeof col === "object")
@@ -18,6 +19,11 @@ export function _getColumnSchema(schema, field, col) {
       return schema.layout.obsByName[col];
     case "X":
       return schema.dataframe;
+    case "trajectory":
+      if (typeof col === "object")
+        throw new Error("unable to get column schema by query");
+      // # 补充trajectory字段的注册后读取
+      return schema.trajectory.obsByName[col];
     default:
       throw new Error(`unknown field name: ${field}`);
   }
@@ -30,10 +36,10 @@ export function _isIndex(schema, field, col) {
 
 export function _getColumnDimensionNames(schema, field, col) {
   /*
-		field/col may be an alias for multiple columns. Currently used to map ND 
-		values to 1D dataframe columns for embeddings/layout. Signified by the presence
-		of the "dims" value in the schema.
-		*/
+    field/col may be an alias for multiple columns. Currently used to map ND 
+    values to 1D dataframe columns for embeddings/layout. Signified by the presence
+    of the "dims" value in the schema.
+    */
   const colSchema = _getColumnSchema(schema, field, col);
   if (!colSchema) {
     return undefined;

@@ -13,18 +13,19 @@ with open("server/requirements-annotate.txt") as fh:
     requirements_annotate = fh.read().splitlines()
 
 setup(
-    name="cellxgene",
-    version="1.3.0",
+    name="cxgxf",
+    version="0.1.0",
     packages=find_packages(),
-    url="https://github.com/chanzuckerberg/cellxgene",
+    url="https://github.com/HuangDDU/cellxgene",
     license="MIT",
-    author="Chan Zuckerberg Initiative",
-    author_email="cellxgene@chanzuckerberg.com",
-    description="Web application for exploration of large scale scRNA-seq datasets",
+    author="HuangDDU",
+    author_email="hzy554598474@163.com",
+    description="Cell fate explorer visualization tool based on cellxgene",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=requirements,
     python_requires=">=3.10",
+    package_data={"": ["templates/*", "static/*"]}, # 指定静态资源文件路径                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
     include_package_data=True,
     zip_safe=False,
     classifiers=[
@@ -43,6 +44,6 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    entry_points={"console_scripts": ["cellxgene = server.cli.cli:cli"]},
+    entry_points={"console_scripts": ["cellxgene = server.cli.cli:cli"]}, # keep use 'cellxgene' in cmd
     extras_require=dict(prepare=requirements_prepare, annotate=requirements_annotate),
 )

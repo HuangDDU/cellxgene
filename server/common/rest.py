@@ -126,6 +126,11 @@ def config_get(app_config, data_adaptor):
     return make_response(jsonify(config), HTTPStatus.OK)
 
 
+def uns_get(data_adaptor):
+    uns = data_adaptor.get_uns()
+    # return make_response(jsonify(uns) ,HTTPStatus.OK)
+    return make_response(uns ,HTTPStatus.OK, {"Content-Type": "application/json"})
+
 def annotations_obs_get(request, data_adaptor):
     fields = request.args.getlist("annotation-name", None)
     num_columns_requested = len(data_adaptor.get_obs_keys()) if len(fields) == 0 else len(fields)
@@ -282,6 +287,7 @@ def diffexp_obs_post(request, data_adaptor):
 
 
 def layout_obs_get(request, data_adaptor):
+    # http://localhost:5005/api/v0.2/layout/obs?layout-name=umap
     fields = request.args.getlist("layout-name", None)
     num_columns_requested = len(data_adaptor.get_embedding_names()) if len(fields) == 0 else len(fields)
     if data_adaptor.server_config.exceeds_limit("column_request_max", num_columns_requested):
@@ -293,6 +299,7 @@ def layout_obs_get(request, data_adaptor):
 
     try:
         return make_response(
+            # 获取指定降维并返回矩阵
             data_adaptor.layout_to_fbs_matrix(fields), HTTPStatus.OK, {"Content-Type": "application/octet-stream"}
         )
     except (KeyError, DatasetAccessError) as e:
@@ -306,6 +313,25 @@ def layout_obs_get(request, data_adaptor):
         )
 
 
+# def trajectory_obs_get(request, data_adaptor):
+#     # http://localhost:5005/api/v0.2/trajectory/obs?trajectory-name=ref%40%40%40emb
+#     fields = request.args.getlist("trajectory-name", None)  # trajectory-name: ref@@@emb
+
+#     try:
+#         return make_response(
+#             # 获取指定轨迹并返回矩阵
+#             data_adaptor.trajectory_to_fbs_matrix(fields), HTTPStatus.OK, {"Content-Type": "application/octet-stream"}
+#         )
+#     except (KeyError, DatasetAccessError) as e:
+#         return abort_and_log(HTTPStatus.BAD_REQUEST, str(e), include_exc_info=True)
+#     except PrepareError:
+#         return abort_and_log(
+#             HTTPStatus.NOT_IMPLEMENTED,
+#             f"No trajectory available {request.path}",
+#             loglevel=logging.ERROR,
+#             include_exc_info=True,
+#         )
+        
 def genesets_get(request, data_adaptor):
     preferred_mimetype = request.accept_mimetypes.best_match(["application/json", "text/csv"])
     if preferred_mimetype not in ("application/json", "text/csv"):

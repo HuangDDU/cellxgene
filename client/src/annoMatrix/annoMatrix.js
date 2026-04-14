@@ -18,28 +18,39 @@ const _dataframeCache = dataframeMemo(128);
 
 export default class AnnoMatrix {
   /*
+  1. AnnoMatrix对象的抽象基类, 作为与后端交互提供的注释矩阵数据的代理
   Abstract base class for all AnnoMatrix objects.  This class provides a proxy
   to the annotated matrix data authoritatively served by the server/back-end.
 
+  2. AnnoMatrix实例是不可变的, 其模式和维度不会改变, 可以使用简单的对象相等来检
+  测结构变化实际数据被缓存, 不保证存在, 任何访问数据的请求必须通过fetch()调用解决, 
+  这是异步的, 可能涉及服务器往返.
   AnnoMatrix instances are immutable, meaning that their schema and dimensionality
   will not change, and simple object equality can be used to detect structural
   changes. The actual data is cached, and not guaranteed to be present -- any
   request to access data must be resolved by a fetch() call, which is async, and
   may involve a server round-trip.
 
+  4. 不变性所做的保证，即任何一项都可以通过以下方式检测到简单的annoMatrix比较： 
+    * 模式是相同的，包括所有字段和列 
+    * 维度相同（nObs，nVar） 
+    * 数据映射/转换（如剪裁）是相同的AnnoMatrixes也像过滤器一样“堆叠”, 允许构建以某种方式转换数据的视图
   Guarantees made by the immutabilty, ie, any of these can be detected by
   simple annoMatrix compare:
     * schema is the same, including all fields and columns
     * dimensionality is the same (nObs, nVar)
     * data mapping/transformation, such as clipping, are the same
 
+   4. AnnoMatrix还具有类似“堆栈”的过滤器，允许构建以某种方式转换数据的视图。
   AnnoMatrixes also "stack" like filters, allowing for the construction of
   views which transform the data in some manner.
 
+  5. 通过AnnoMatrixLoader类的实例化，
   The bootstrap class is AnnoMatrixLoader, which is the caching server proxy, and
   is bootstrapped with a API URL:
     new AnnoMatirx(url, schema) -> annoMatrix
 
+  4. 各种视图如AnnoMatrixRowSubsetView, 具有服务器数据的转换视图,使用viewCreators调用。
   There are various "views", such as AnnoMatrixRowSubsetView, which provide
   the same interface but with a transformed view of the server data.  Utilities in
   viewCreators.js can be used to create these views:
@@ -51,7 +62,7 @@ export default class AnnoMatrix {
     /*
     return the fields present in the AnnoMatrix instance.
     */
-    return ["obs", "var", "emb", "X"];
+    return ["obs", "var", "emb", "X", "trajectory"];
   }
 
   constructor(schema, nObs, nVar, rowIndex = null) {
@@ -83,27 +94,33 @@ export default class AnnoMatrix {
     this.userFlags = {};
 
     /*
-		Private instance variables.
+    Private instance variables.
 
-		These are caches - lazily loaded. The only guarantee is that if they
-		are loaded, they will conform to the schema & dimensionality constraints.
+    These are caches - lazily loaded. The only guarantee is that if they
+    are loaded, they will conform to the schema & dimensionality constraints.
 
-		Do NOT use directly - instead, use the fetch() and preload() API.
-		*/
+    Do NOT use directly - instead, use the fetch() and preload() API.
+    这里不直接添加，而是通过fetch和preload API添加到_cache里
+    */
     this._cache = {
       obs: Dataframe.empty(this.rowIndex),
       var: Dataframe.empty(this.rowIndex),
       emb: Dataframe.empty(this.rowIndex),
       X: Dataframe.empty(this.rowIndex),
+      // trajectory: Dataframe.empty(this.rowIndex), # TODO: remove trajectory, should in uns
     };
     this._pendingLoad = {
       obs: {},
       var: {},
       emb: {},
       X: {},
+      // trajectory: {}, # TODO: remove trajectory, should in uns
     };
     this._whereCache = {};
     this._gcInfo = new Map();
+
+    // TOOD: lazy load unstructed data.
+    this.uns = {}; // uns结构的注册在action/index.js里,
   }
 
   /**
@@ -175,70 +192,72 @@ export default class AnnoMatrix {
    ** Load / read interfaces
    **/
   fetch(field, q) {
+    // 与annoMatrix的IO接口，请求规则：单个字符串，对象，数组
     /*
-		Return the given query on a single matrix field as a single dataframe.
-		Currently supports ONLY full column query.
+    Return the given query on a single matrix field as a single dataframe.
+    Currently supports ONLY full column query.
 
-		Returns a Promise for the query result, which will resolve to a dataframe.
+    Returns a Promise for the query result, which will resolve to a dataframe.
 
-		Field must be one of the matrix fields: 'obs', 'var', 'X', 'emb'.  Value
-		represents the underlying object upon which the query is occurring.
+    Field must be one of the matrix fields: 'obs', 'var', 'X', 'emb'.  Value
+    represents the underlying object upon which the query is occurring.
 
-		Query is one of:
-			* a string, representing a single column name from the field, eg,
-				"n_genes"
-			* an object, containing an "value" query (see below).
-			* an array, containing one or more of the above.
+    Query is one of:
+      * a string, representing a single column name from the field, eg,
+        "n_genes"
+      * an object, containing an "value" query (see below).
+      * an array, containing one or more of the above.
 
-		Columns may have more than one dimension, and all will be fetched
-		and returned together.  This is most commonly seen in an embedding,
+    Columns may have more than one dimension, and all will be fetched
+    and returned together.  This is most commonly seen in an embedding,
     which usually has two dimensions.
 
-		A value query allows for fetching based upon the value in another 
-		field/column, similar to a join.  Currently only supported on the var
-		dimension, allowing query of X columns by var value (eg, gene name)
+    A value query allows for fetching based upon the value in another 
+    field/column, similar to a join.  Currently only supported on the var
+    dimension, allowing query of X columns by var value (eg, gene name)
 
-		Examples:
+    Examples:
 
     1. Fetch the "n_genes" column the "obs":
 
-			const df = await fetch("obs", "n_genes")
+      const df = await fetch("obs", "n_genes")
       console.log("Largest number of genes is: ", df.summarize().max);
 
     2. Fetch two separate columns from obs.  Returns a single dataframe containing
        the columns:
 
-			const df = await fetch("obs", ["n_genes", "louvain"])
+      const df = await fetch("obs", ["n_genes", "louvain"])
       console.log("Cell 0 has category: ", df.at(0, "louvain"));
 
     3. Fetch an entire X (expression counts) column that has a var annotation
        value "TYMP" in the var index.
 
-			fetch("X", { 
-				where: {
+      fetch("X", { 
+        where: {
           field: "var", column: this.schema.annotations.var.index, value: "TYMP"
         }
-			})
+      })
 
       In AnnData & Pandas DataFrame API, this is equivalent to:
         adata.X[:, adata.var.index.get_loc("SUMO3")]
 
-		The value query is a recodification and subset of the server REST API 
-		value filter JSON.  Range queries and multiple filters are not currently
-		supported.
+    The value query is a recodification and subset of the server REST API 
+    value filter JSON.  Range queries and multiple filters are not currently
+    supported.
 
-		*/
+    */
     return this._fetch(field, q);
   }
 
   prefetch(field, q) {
     /*
-		Start a data fetch & cache fill.  Identical to fetch() except it does
-		not return a value.
+    Start a data fetch & cache fill.  Identical to fetch() except it does
+    not return a value.
 
     Primary use is to being a cache load as early as is possible, reducing
     overall component rendering latency.
-		*/
+    */
+    // 仅用作填充字段,
     this._fetch(field, q);
     return undefined;
   }
@@ -261,6 +280,7 @@ export default class AnnoMatrix {
    ** The actual implementation is in the sub-classes, which MUST override these.
    **/
 
+  //  后续是一堆抽象函数, 如果子类实现这些方法, 调用的时候会报错
   // eslint-disable-next-line class-methods-use-this, no-unused-vars -- make sure subclass implements
   addObsAnnoCategory(col, category) {
     /*
@@ -430,45 +450,64 @@ export default class AnnoMatrix {
   }
 
   async _fetch(field, q) {
+    // TODO: uns字段数据提取, trajectory属于uns字段
+    // 1. 校验字段是否有效
     if (!AnnoMatrix.fields().includes(field)) return undefined;
+
+    // 2. 确保查询条件是数组
     const queries = Array.isArray(q) ? q : [q];
     queries.forEach(_queryValidate);
+    // console.log(`trajectory field ${field}, q ${q}`);
+    // console.log("trajectory queries", queries);
 
     /* find cached columns we need, and GC the rest */
+    // 3. 找出缓存中已有的列，并清理无用缓存
     const cachedColumns = this._resolveCachedQueries(field, queries);
     this._gcFetchCleanup(field, cachedColumns);
+    // console.log("trajectory cachedColumns", cachedColumns);
 
     /* find any query not already cached */
+    // 4. 找出缓存中没有的查询条件
     const uncachedQueries = queries.filter((query) =>
       _whereCacheGet(this._whereCache, this.schema, field, query).some(
         (cacheKey) =>
           cacheKey === undefined || !this._cache[field].hasCol(cacheKey)
       )
     );
+    // console.log("trajectory uncachedQueries", uncachedQueries);
 
     /* load uncached queries */
+    // 5. 对未缓存的查询条件，异步加载数据并更新缓存
     if (uncachedQueries.length > 0) {
       await Promise.all(
         uncachedQueries.map((query) =>
           this._getPendingLoad(field, query, async (_field, _query) => {
             /* fetch, then index.  _doLoad is subclass interface */
-            const [whereCacheUpdate, df] = await this._doLoad(_field, _query);
-            this._cache[_field] = this._cache[_field].withColsFrom(df);
+            const [whereCacheUpdate, df] = await this._doLoad(_field, _query); // 调用子类接口加载数据
+            // console.log("trajectory whereCacheUpdate", whereCacheUpdate);
+            // console.log("trajectory df", df);
+            // 由于注册字段的错误，此处会多次对trajectory重复添加
+            this._cache[_field] = this._cache[_field].withColsFrom(df); // 用新加载的 df 更新缓存
+            // console.log("trajectory this._cache[_field]", this._cache[_field]);
+            // console.log(`trajectory this._cache[_field](${_field})`, this._cache[_field]);
             this._whereCache = _whereCacheMerge(
               this._whereCache,
               whereCacheUpdate
-            );
+            ); // 更新 whereCache 索引
           })
         )
       );
     }
 
     /* everything we need is in the cache, so just cherry-pick requested columns */
+    // 6. 对于缓存中已有DataFrame数据，挑选请求的列返回
     const requestedCacheKeys = this._resolveCachedQueries(field, queries);
+    // console.log("trajectory requestedCacheKeys", requestedCacheKeys);
     const response = _dataframeCache(
       this._cache[field].subset(null, requestedCacheKeys)
     );
     this._gcUpdateStats(field, response);
+    // console.log("trajectory response", response);
     return response;
   }
 
@@ -646,5 +685,6 @@ function _columnCacheKey(field, column) {
 
 function _subclassResponsibility() {
   /* protect against bugs in subclass */
+  // 直接抛出异常, 说明子类没有实现该抽象类的抽象方法
   throw new Error("subclass failed to implement required method");
 }

@@ -1,6 +1,12 @@
 import React from "react";
 import { connect } from "react-redux";
 import { ButtonGroup, AnchorButton, Tooltip } from "@blueprintjs/core";
+import {
+  // exportComponentAsPNG,
+  exportComponentAsJPEG,
+  // exportComponentAsPDF,
+} from "react-component-export-image";
+// import html2canvas from "html2canvas";
 
 import * as globals from "../../globals";
 import styles from "./menubar.css";
@@ -113,7 +119,7 @@ class MenuBar extends React.PureComponent {
 
   handleClipPercentileMinValueChange = (v) => {
     /*
-    Ignore anything that isn't a legit number
+    Ignore anything that isn"t a legit number
     */
     if (!Number.isFinite(v)) return;
 
@@ -133,7 +139,7 @@ class MenuBar extends React.PureComponent {
 
   handleClipPercentileMaxValueChange = (v) => {
     /*
-    Ignore anything that isn't a legit number
+    Ignore anything that isn"t a legit number
     */
     if (!Number.isFinite(v)) return;
 
@@ -191,6 +197,39 @@ class MenuBar extends React.PureComponent {
     dispatch(actions.resetSubsetAction());
   };
 
+  handleSavePdf = async () => {
+    // TODO: 保存当前graph组件内部为PDF, PNG, JPG, 但是目前可能Graph组件内部有Canvas WebGL等保存比较困难。
+    // 使用Ref保存React组件对应的图片
+    const { graphRef } = this.props; // 绘图区域，需要保存
+    console.log("graphRef", graphRef);
+    // exportComponentAsPNG(graphRef, "test.png");
+    exportComponentAsJPEG(graphRef, "test.jpg");
+    // exportComponentAsPDF(graphRef, "test.pdf");
+
+    // 直接操作DOM元素保存图片
+    // const graphElement = document.getElementById("graph-wrapper");
+    // console.log("graphElement", graphElement);
+    // if (graphElement) {
+    //   html2canvas(graphElement, {
+    //     backgroundColor: "#ffffff",
+    //     scale: 2, // 提高清晰度
+    //     useCORS: true,
+    //     allowTaint: true
+    //   }).then(canvas => {
+    //     // 保存为 PNG
+    //     const link = document.createElement("a");
+    //     link.download = "graph.png";
+    //     link.href = canvas.toDataURL("image/png");
+    //     link.click();
+
+    //     // 或者保存为 JPEG
+    //     // link.href = canvas.toDataURL("image/jpeg", 0.9);
+    //   }).catch(error => {
+    //     console.error("截图失败:", error);
+    //   });
+    // }
+  };
+
   render() {
     const {
       dispatch,
@@ -231,6 +270,20 @@ class MenuBar extends React.PureComponent {
           zIndex: 3,
         }}
       >
+        {/* 展示从右到左的顺序 */}
+        {/* TODO: 保存按钮 */}
+        <Tooltip
+          content="TODO: save current view to pdf or png"
+          position="bottom"
+          disabled={graphInteractionMode === "zoom"}
+        >
+          <AnchorButton
+            className={styles.menubarButton}
+            type="button"
+            icon="camera"
+            onClick={this.handleSavePdf}
+          />
+        </Tooltip>
         <UndoRedoReset
           dispatch={dispatch}
           undoDisabled={undoDisabled}

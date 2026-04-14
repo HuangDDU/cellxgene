@@ -1,0 +1,11 @@
+,comp_1,comp_2,waypoint_id,milestone_id,from,to,percentage,group,arrow
+0,10.101389379135313,10.861788543912294,MILESTONE_BEGIN_WsA -> sB_sB -> sBmid,sA -> sB,sA -> sB,sB -> sBmid,0.0,sA -> sB---sB -> sBmid,False
+46,4.760348170055336,9.00688578787018,MILESTONE_END_WsA -> sB_sB -> sBmid,sB -> sBmid,sA -> sB,sB -> sBmid,1.0,sA -> sB---sB -> sBmid,False
+47,4.760348170055336,9.00688578787018,MILESTONE_BEGIN_WsB -> sBmid_sBmid -> sC,sB -> sBmid,sB -> sBmid,sBmid -> sC,0.0,sB -> sBmid---sBmid -> sC,False
+91,0.5951079427530996,6.173360660329634,MILESTONE_END_WsB -> sBmid_sBmid -> sC,sBmid -> sC,sB -> sBmid,sBmid -> sC,1.0,sB -> sBmid---sBmid -> sC,False
+92,4.760348170055336,9.00688578787018,MILESTONE_BEGIN_WsB -> sBmid_sBmid -> sD,sB -> sBmid,sB -> sBmid,sBmid -> sD,0.0,sB -> sBmid---sBmid -> sD,False
+129,1.2441095047220379,7.297034741447024,MILESTONE_END_WsB -> sBmid_sBmid -> sD,sBmid -> sD,sB -> sBmid,sBmid -> sD,1.0,sB -> sBmid---sBmid -> sD,False
+130,0.5951079427530999,6.173360660329634,MILESTONE_BEGIN_WsBmid -> sC_sC -> sEndC,sBmid -> sC,sBmid -> sC,sC -> sEndC,0.0,sBmid -> sC---sC -> sEndC,False
+173,-3.545574489470862,2.676791505913052,MILESTONE_END_WsBmid -> sC_sC -> sEndC,sC -> sEndC,sBmid -> sC,sC -> sEndC,1.0,sBmid -> sC---sC -> sEndC,False
+174,1.2441095047220379,7.297034741447024,MILESTONE_BEGIN_WsBmid -> sD_sD -> sEndD,sBmid -> sD,sBmid -> sD,sD -> sEndD,0.0,sBmid -> sD---sD -> sEndD,False
+208,-2.537527519864188,7.734664857598894,MILESTONE_END_WsBmid -> sD_sD -> sEndD,sD -> sEndD,sBmid -> sD,sD -> sEndD,1.0,sBmid -> sD---sD -> sEndD,False

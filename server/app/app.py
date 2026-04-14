@@ -115,6 +115,14 @@ class ConfigAPI(Resource):
         return common_rest.config_get(current_app.app_config, data_adaptor)
 
 
+
+class UnsAPI(Resource):
+    @cache_control(public=True, max_age=ONE_WEEK)
+    @rest_get_data_adaptor
+    def get(self, data_adaptor):
+        return common_rest.uns_get(data_adaptor)
+    
+    
 class AnnotationsObsAPI(Resource):
     @cache_control(public=True, max_age=ONE_WEEK)
     @rest_get_data_adaptor
@@ -165,7 +173,19 @@ class LayoutObsAPI(Resource):
     @rest_get_data_adaptor
     def get(self, data_adaptor):
         return common_rest.layout_obs_get(request, data_adaptor)
+    
 
+# class TrajectoryObsAPI(Resource):
+#     @cache_control(public=True, max_age=ONE_WEEK)
+#     @rest_get_data_adaptor
+#     def get(self, data_adaptor):
+#         return common_rest.trajectory_obs_get(request, data_adaptor)
+
+# class TrajectoryNewObsAPI(Resource):
+#     @cache_control(public=True, max_age=ONE_WEEK)
+#     @rest_get_data_adaptor
+#     def get(self, data_adaptor):
+#         return common_rest.trajectorynew_obs_get(request, data_adaptor)
 
 class GenesetsAPI(Resource):
     @cache_control(public=True, max_age=ONE_WEEK)
@@ -211,6 +231,7 @@ def get_api_dataroot_resources(bp_dataroot):
     # Initialization routes
     add_resource(SchemaAPI, "/schema")
     add_resource(ConfigAPI, "/config")
+    add_resource(UnsAPI, "/uns") # uns无结构数据
     # Data routes
     add_resource(AnnotationsObsAPI, "/annotations/obs")
     add_resource(AnnotationsVarAPI, "/annotations/var")
@@ -221,7 +242,10 @@ def get_api_dataroot_resources(bp_dataroot):
     add_resource(ColorsAPI, "/colors")
     # Computation routes
     add_resource(DiffExpObsAPI, "/diffexp/obs")
-    add_resource(LayoutObsAPI, "/layout/obs")
+    add_resource(LayoutObsAPI, "/layout/obs") # 降维布局相关
+    # add_resource(TrajectoryObsAPI, "/trajectory/obs") # 轨迹推断相关
+    # add_resource(TrajectoryNewObsAPI, "/trajectorynew/obs") # 轨迹推断相关
+    
     return api
 
 

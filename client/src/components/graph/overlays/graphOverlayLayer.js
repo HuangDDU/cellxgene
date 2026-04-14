@@ -16,23 +16,27 @@ export default class GraphOverlayLayer extends PureComponent {
     };
   }
 
-  matrixToTransformString = (m) => 
+  matrixToTransformString = (m) =>
     /* 
       Translates the gl-matrix mat3 to SVG matrix transform style
+      由gl-matrix（3*3列主序矩阵）的转换为SVG的matrix（精简2*3）变换样式
 
                             mat3                    SVG Transform Function          
         a  c  e       
         b  d  f / [a, b, 0, c, d, 0, e, f, 1] =>  matrix(a, b, c, d, e, f) / matrix(sx, 0, 0, sy, tx, ty) / matrix(m[0] m[3] m[1] m[4] m[6] m[7])
         0  0  1      
     */
-     `matrix(${m[0]} ${m[1]} ${m[3]} ${m[4]} ${m[6]} ${m[7]})`
-  ;
+    `matrix(${m[0]} ${m[1]} ${m[3]} ${m[4]} ${m[6]} ${m[7]})`;
 
-  reverseMatrixScaleTransformString = (m) => `matrix(${1 / m[0]} 0 0 ${1 / m[4]} 0 0)`;
+  reverseMatrixScaleTransformString = (m) =>
+    `matrix(${1 / m[0]} 0 0 ${1 / m[4]} 0 0)`;
 
   // This is passed to all children, should be called when an overlay's display state is toggled along with the overlay name and its new display state in boolean form
   overlaySetShowing = (overlay, displaying) => {
-    this.setState((state) => ({ ...state, display: { ...state.display, [overlay]: displaying } }));
+    this.setState((state) => ({
+      ...state,
+      display: { ...state.display, [overlay]: displaying },
+    }));
   };
 
   render() {
@@ -60,12 +64,14 @@ export default class GraphOverlayLayer extends PureComponent {
     )} scale(1 2) scale(1 ${1 / -height}) scale(2 1) scale(${1 / width} 1)`;
 
     // Copy the children passed with the overlay and add the inverse transform and onDisplayChange props
+    // 复制随覆盖传递的子对象，并添加逆变换和可见性
     const newChildren = React.Children.map(children, (child) =>
       cloneElement(child, {
         inverseTransform,
         overlaySetShowing: this.overlaySetShowing,
       })
     );
+    // console.log("GraphOverlayLayer.render: newChildren", newChildren);
 
     return (
       <svg
@@ -83,6 +89,7 @@ export default class GraphOverlayLayer extends PureComponent {
         onMouseMove={handleCanvasEvent}
         onWheel={handleCanvasEvent}
       >
+        {/* 多层嵌套 <g>，每一层都应用了不同的变换，目的是分步应用不同的坐标系变换，最终把数据坐标系转换成屏幕坐标系 */}
         <g
           id="canvas-transformation-group-x"
           transform={`scale(${width} 1) scale(.5 1) translate(1 0)`}
